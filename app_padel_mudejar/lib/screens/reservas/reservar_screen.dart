@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -8,7 +9,9 @@ import '../../core/theme.dart';
 import '../../providers/auth_provider.dart';
 
 class ReservarScreen extends StatefulWidget {
-  const ReservarScreen({super.key});
+  final Map<String, dynamic>? instalacionInicial;
+
+  const ReservarScreen({super.key, this.instalacionInicial});
 
   @override
   State<ReservarScreen> createState() => _ReservarScreenState();
@@ -42,8 +45,24 @@ class _ReservarScreenState extends State<ReservarScreen> {
       setState(() {
         _instalaciones = inst;
         _tarifas = tar;
+        if (widget.instalacionInicial != null) {
+          _instalacionSeleccionada = inst.firstWhere(
+            (i) =>
+                i['idInstalacion'] ==
+                widget.instalacionInicial!['idInstalacion'],
+            orElse: () => inst.isNotEmpty ? inst[0] : null,
+          );
+          // Preseleccionar primera tarifa por defecto
+          if (tar.isNotEmpty) {
+            _tarifaSeleccionada = tar[0];
+          }
+        }
         _loadingInstalaciones = false;
       });
+      // Cargar horas si viene con pista preseleccionada
+      if (widget.instalacionInicial != null) {
+        _cargarHoras();
+      }
     } catch (e) {
       setState(() => _loadingInstalaciones = false);
     }
@@ -148,13 +167,7 @@ class _ReservarScreenState extends State<ReservarScreen> {
           TextButton(
             onPressed: () {
               Navigator.of(context, rootNavigator: true).pop();
-              setState(() {
-                _paso = 0;
-                _instalacionSeleccionada = null;
-                _tarifaSeleccionada = null;
-                _horaSeleccionada = null;
-                _horas = [];
-              });
+              context.pop();
             },
             child: const Text(
               'Aceptar',
@@ -286,18 +299,20 @@ class _ReservarScreenState extends State<ReservarScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionTitle('Elige una pista'),
-        const SizedBox(height: 12),
-        ..._instalaciones.map(
-          (inst) => _InstalacionCard(
-            instalacion: inst,
-            selected:
-                _instalacionSeleccionada?['idInstalacion'] ==
-                inst['idInstalacion'],
-            onTap: () => setState(() => _instalacionSeleccionada = inst),
+        if (widget.instalacionInicial == null) ...[
+          _sectionTitle('Elige una pista'),
+          const SizedBox(height: 12),
+          ..._instalaciones.map(
+            (inst) => _InstalacionCard(
+              instalacion: inst,
+              selected:
+                  _instalacionSeleccionada?['idInstalacion'] ==
+                  inst['idInstalacion'],
+              onTap: () => setState(() => _instalacionSeleccionada = inst),
+            ),
           ),
-        ),
-        const SizedBox(height: 24),
+          const SizedBox(height: 24),
+        ],
         _sectionTitle('Elige la duración'),
         const SizedBox(height: 12),
         ..._tarifas.map(

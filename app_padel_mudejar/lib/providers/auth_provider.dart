@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/api_service.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 class AuthProvider extends ChangeNotifier {
   Map<String, dynamic>? _socio;
@@ -57,9 +58,7 @@ class AuthProvider extends ChangeNotifier {
 
       if (result['success'] != true) {
         _error =
-            result['message']?.toString() ??
-            result['message']?.toString() ??
-            'DNI o contraseña incorrectos.';
+            result['message']?.toString() ?? 'DNI o contraseña incorrectos.';
         _isLoading = false;
         notifyListeners();
         return false;
@@ -71,6 +70,14 @@ class AuthProvider extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('dni_sesion', dni);
       await prefs.setString('pass_sesion', password);
+
+      // Registrar token de OneSignal
+      try {
+        final pushToken = OneSignal.User.pushSubscription.id;
+        if (pushToken != null && pushToken.isNotEmpty) {
+          await ApiService.registrarPushToken(dni, pushToken);
+        }
+      } catch (_) {}
 
       _isLoading = false;
       notifyListeners();
@@ -94,11 +101,18 @@ class AuthProvider extends ChangeNotifier {
       if (result['success'] == true) {
         _socio = result['data'];
         final dni = datos['dni'];
-        // La contraseña por defecto es el DNI
         _passwordActual = dni;
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('dni_sesion', dni);
         await prefs.setString('pass_sesion', dni);
+
+        // Registrar token de OneSignal
+        try {
+          final pushToken = OneSignal.User.pushSubscription.id;
+          if (pushToken != null && pushToken.isNotEmpty) {
+            await ApiService.registrarPushToken(dni, pushToken);
+          }
+        } catch (_) {}
       }
       _isLoading = false;
       notifyListeners();
@@ -125,6 +139,14 @@ class AuthProvider extends ChangeNotifier {
     } catch (_) {
       return false;
     }
+  }
+
+  /// Actualizar Perfil
+  Future<void> recargarPerfil() async {
+    try {
+      _socio = await ApiService.getSocio(dni);
+      notifyListeners();
+    } catch (_) {}
   }
 
   /// Cerrar sesión

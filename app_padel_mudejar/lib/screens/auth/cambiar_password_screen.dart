@@ -57,9 +57,9 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
           _guardando = false;
         });
       }
-    } catch (_) {
+    } catch (e) {
       setState(() {
-        _error = 'Error de conexión';
+        _error = e.toString();
         _guardando = false;
       });
     }
@@ -78,9 +78,7 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
               children: [
                 const SizedBox(height: 60),
 
-                const LogoWidget()
-                    .animate()
-                    .fadeIn(duration: 500.ms),
+                const LogoWidget().animate().fadeIn(duration: 500.ms),
 
                 const SizedBox(height: 40),
 
@@ -105,20 +103,27 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
                   obscureText: !_verNueva,
                   decoration: InputDecoration(
                     hintText: 'Nueva contraseña',
-                    prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppTheme.primary),
+                    prefixIcon: const Icon(
+                      Icons.lock_outline_rounded,
+                      color: AppTheme.primary,
+                    ),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _verNueva ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                        _verNueva
+                            ? Icons.visibility_off_rounded
+                            : Icons.visibility_rounded,
                         color: AppTheme.textLight,
                       ),
                       onPressed: () => setState(() => _verNueva = !_verNueva),
                     ),
                   ),
                   validator: (v) {
-                    if (v == null || v.isEmpty) return 'Introduce una contraseña';
+                    if (v == null || v.isEmpty)
+                      return 'Introduce una contraseña';
                     if (v.length < 6) return 'Mínimo 6 caracteres';
                     final auth = context.read<AuthProvider>();
-                    if (v == auth.dni) return 'La contraseña no puede ser tu DNI';
+                    if (v == auth.dni)
+                      return 'La contraseña no puede ser tu DNI';
                     return null;
                   },
                 ).animate().fadeIn(delay: 300.ms).slideX(begin: -0.2, end: 0),
@@ -131,18 +136,25 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
                   obscureText: !_verConfirmar,
                   decoration: InputDecoration(
                     hintText: 'Confirmar contraseña',
-                    prefixIcon: const Icon(Icons.lock_rounded, color: AppTheme.primary),
+                    prefixIcon: const Icon(
+                      Icons.lock_rounded,
+                      color: AppTheme.primary,
+                    ),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _verConfirmar ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                        _verConfirmar
+                            ? Icons.visibility_off_rounded
+                            : Icons.visibility_rounded,
                         color: AppTheme.textLight,
                       ),
-                      onPressed: () => setState(() => _verConfirmar = !_verConfirmar),
+                      onPressed: () =>
+                          setState(() => _verConfirmar = !_verConfirmar),
                     ),
                   ),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Confirma tu contraseña';
-                    if (v != _nuevaCtrl.text) return 'Las contraseñas no coinciden';
+                    if (v != _nuevaCtrl.text)
+                      return 'Las contraseñas no coinciden';
                     return null;
                   },
                 ).animate().fadeIn(delay: 350.ms).slideX(begin: -0.2, end: 0),
@@ -158,12 +170,19 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.error_outline, color: AppTheme.danger, size: 18),
+                        const Icon(
+                          Icons.error_outline,
+                          color: AppTheme.danger,
+                          size: 18,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             _error!,
-                            style: const TextStyle(color: AppTheme.danger, fontSize: 13),
+                            style: const TextStyle(
+                              color: AppTheme.danger,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                       ],
@@ -178,12 +197,28 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
                       ? const SizedBox(
                           height: 20,
                           width: 20,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
                         )
                       : const Text('Guardar contraseña'),
                 ).animate().fadeIn(delay: 400.ms),
 
                 const SizedBox(height: 40),
+
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: () async {
+                    final auth = context.read<AuthProvider>();
+                    await auth.logout();
+                    if (mounted) context.go('/login');
+                  },
+                  child: const Text(
+                    'Más tarde',
+                    style: TextStyle(color: AppTheme.textMedium),
+                  ),
+                ),
               ],
             ),
           ),

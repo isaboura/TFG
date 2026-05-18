@@ -120,7 +120,9 @@ class _PistaCard extends StatelessWidget {
     final estado = instalacion['estadoPista'] as String? ?? '';
     final activa = estado == 'ACTIVA';
     final imagenUrl = instalacion['imagen_url'] as String?;
-    final promedio = resenas?['promedio'] as double?;
+    final promedio = resenas?['promedio'] != null
+        ? (resenas!['promedio'] as num).toDouble()
+        : null;
     final total = resenas?['total'] as int? ?? 0;
 
     return GestureDetector(

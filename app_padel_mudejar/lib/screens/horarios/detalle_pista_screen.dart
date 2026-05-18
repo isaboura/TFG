@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../core/api_service.dart';
 import '../../core/theme.dart';
@@ -52,13 +53,24 @@ class _DetallePistaScreenState extends State<DetallePistaScreen> {
     final nombre = widget.instalacion['nombre'] ?? '';
     final tipo = widget.instalacion['tipo'] ?? '';
     final ubicacion = widget.instalacion['ubicacion'] as String?;
+    final activa = widget.instalacion['estadoPista'] == 'ACTIVA';
     final disponibles = _horas.where((h) => h['disponible'] == true).length;
 
     return Scaffold(
       backgroundColor: AppTheme.background,
+      bottomNavigationBar: activa
+          ? SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                child: ElevatedButton(
+                  onPressed: () => context.push('/reservar', extra: widget.instalacion),
+                  child: const Text('Reservar esta pista'),
+                ),
+              ),
+            )
+          : null,
       body: CustomScrollView(
         slivers: [
-          // App bar con imagen
           SliverAppBar(
             expandedHeight: 220,
             pinned: true,
@@ -82,20 +94,15 @@ class _DetallePistaScreenState extends State<DetallePistaScreen> {
                           color: AppTheme.primary.withOpacity(0.2),
                           child: const Icon(Icons.sports_tennis_rounded, size: 80, color: AppTheme.primary),
                         ),
-                  // Gradiente
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.5),
-                        ],
+                        colors: [Colors.transparent, Colors.black.withOpacity(0.5)],
                       ),
                     ),
                   ),
-                  // Nombre sobre la imagen
                   Positioned(
                     bottom: 16,
                     left: 16,
@@ -103,23 +110,13 @@ class _DetallePistaScreenState extends State<DetallePistaScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          nombre,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
+                        Text(nombre, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700)),
                         if (ubicacion != null)
                           Row(
                             children: [
                               const Icon(Icons.location_on_rounded, size: 13, color: Colors.white70),
                               const SizedBox(width: 3),
-                              Text(
-                                ubicacion,
-                                style: const TextStyle(color: Colors.white70, fontSize: 13),
-                              ),
+                              Text(ubicacion, style: const TextStyle(color: Colors.white70, fontSize: 13)),
                             ],
                           ),
                       ],
@@ -134,7 +131,6 @@ class _DetallePistaScreenState extends State<DetallePistaScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Info tipo y disponibilidad
                 Container(
                   color: Colors.white,
                   padding: const EdgeInsets.all(16),
@@ -146,14 +142,7 @@ class _DetallePistaScreenState extends State<DetallePistaScreen> {
                           color: AppTheme.primary.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: Text(
-                          tipo,
-                          style: const TextStyle(
-                            color: AppTheme.primary,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                          ),
-                        ),
+                        child: Text(tipo, style: const TextStyle(color: AppTheme.primary, fontWeight: FontWeight.w600, fontSize: 13)),
                       ),
                       const Spacer(),
                       if (!_loadingHoras)
@@ -171,7 +160,6 @@ class _DetallePistaScreenState extends State<DetallePistaScreen> {
 
                 const SizedBox(height: 8),
 
-                // Selector de fecha
                 Container(
                   color: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 12),
@@ -228,27 +216,18 @@ class _DetallePistaScreenState extends State<DetallePistaScreen> {
 
                 const SizedBox(height: 8),
 
-                // Horas
                 Container(
                   color: Colors.white,
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Horarios disponibles',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.textDark,
-                        ),
-                      ),
+                      const Text('Horarios disponibles',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppTheme.textDark)),
                       const SizedBox(height: 8),
                       Row(
                         children: [
                           _leyenda(AppTheme.primary, 'Disponible'),
-                          const SizedBox(width: 16),
-                          _leyenda(AppTheme.danger, 'Ocupado'),
                         ],
                       ),
                       const SizedBox(height: 16),
@@ -256,10 +235,8 @@ class _DetallePistaScreenState extends State<DetallePistaScreen> {
                         const Center(child: CircularProgressIndicator(color: AppTheme.primary))
                       else if (_horas.isEmpty)
                         const Center(
-                          child: Text(
-                            'No hay horarios disponibles para este día',
-                            style: TextStyle(color: AppTheme.textMedium),
-                          ),
+                          child: Text('No hay horarios disponibles para este día',
+                              style: TextStyle(color: AppTheme.textMedium)),
                         )
                       else
                         Wrap(
@@ -294,6 +271,8 @@ class _DetallePistaScreenState extends State<DetallePistaScreen> {
                     ],
                   ),
                 ),
+
+                const SizedBox(height: 16),
               ],
             ),
           ),
