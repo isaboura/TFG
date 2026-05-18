@@ -68,79 +68,89 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _cargar,
-          color: AppTheme.primary,
-          child: CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Hola, ${auth.nombre} 👋',
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w700,
-                                color: AppTheme.textDark,
-                              ),
-                            ).animate().fadeIn().slideX(begin: -0.2, end: 0),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Club de Pádel Mudéjar',
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ).animate().fadeIn(delay: 100.ms),
-                          ],
-                        ),
-                      ),
-                      CircleAvatar(
-                        radius: 26,
-                        backgroundColor: AppTheme.primary.withOpacity(0.15),
-                        child: Text(
-                          auth.nombre.isNotEmpty ? auth.nombre[0].toUpperCase() : 'U',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.primary,
+      body: RefreshIndicator(
+        onRefresh: _cargar,
+        color: AppTheme.primary,
+        child: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              expandedHeight: 100,
+              floating: true,
+              snap: true,
+              elevation: 0,
+              backgroundColor: AppTheme.background,
+              surfaceTintColor: Colors.transparent,
+              flexibleSpace: FlexibleSpaceBar(
+                collapseMode: CollapseMode.pin,
+                background: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Hola, ${auth.nombre} 👋',
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTheme.textDark,
+                                ),
+                              ).animate().fadeIn().slideX(begin: -0.2, end: 0),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Club de Pádel Mudéjar',
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ).animate().fadeIn(delay: 100.ms),
+                            ],
                           ),
                         ),
-                      ).animate().fadeIn(delay: 200.ms).scale(begin: const Offset(0.8, 0.8)),
-                    ],
-                  ),
-                ),
-              ),
-
-              if (_loading)
-                const SliverFillRemaining(
-                  child: Center(child: CircularProgressIndicator(color: AppTheme.primary)),
-                )
-              else
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, i) {
-                        final inst = _instalaciones[i];
-                        final resenas = _resenasPorPista[inst['idInstalacion']];
-                        return _PistaCard(
-                          instalacion: inst,
-                          resenas: resenas,
-                          onTap: () => context.push('/horarios/detalle', extra: inst),
-                          onResenasTap: () => _mostrarResenas(context, inst, resenas),
-                        ).animate().fadeIn(delay: Duration(milliseconds: i * 80)).slideY(begin: 0.1, end: 0);
-                      },
-                      childCount: _instalaciones.length,
+                        CircleAvatar(
+                          radius: 26,
+                          backgroundColor: AppTheme.primary.withOpacity(0.15),
+                          child: Text(
+                            auth.nombre.isNotEmpty ? auth.nombre[0].toUpperCase() : 'U',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.primary,
+                            ),
+                          ),
+                        ).animate().fadeIn(delay: 200.ms).scale(begin: const Offset(0.8, 0.8)),
+                      ],
                     ),
                   ),
                 ),
-            ],
-          ),
+              ),
+            ),
+
+            if (_loading)
+              const SliverFillRemaining(
+                child: Center(child: CircularProgressIndicator(color: AppTheme.primary)),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, i) {
+                      final inst = _instalaciones[i];
+                      final resenas = _resenasPorPista[inst['idInstalacion']];
+                      return _PistaCard(
+                        instalacion: inst,
+                        resenas: resenas,
+                        onTap: () => context.push('/horarios/detalle', extra: inst),
+                        onResenasTap: () => _mostrarResenas(context, inst, resenas),
+                      ).animate().fadeIn(delay: Duration(milliseconds: i * 80)).slideY(begin: 0.1, end: 0);
+                    },
+                    childCount: _instalaciones.length,
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
