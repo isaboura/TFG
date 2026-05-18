@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:provider/provider.dart';
 import 'core/router.dart';
 import 'core/theme.dart';
@@ -8,6 +9,10 @@ import 'providers/auth_provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('es_ES', null);
+
+  OneSignal.initialize('72bf246c-60c1-4592-bba2-870a679d4b5e');
+  OneSignal.Notifications.requestPermission(true);
+
   runApp(const PadelMudejarApp());
 }
 
