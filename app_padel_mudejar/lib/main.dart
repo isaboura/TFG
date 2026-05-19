@@ -32,6 +32,8 @@ class PadelMudejarApp extends StatelessWidget {
             routerConfig: router,
             debugShowCheckedModeBanner: false,
             locale: const Locale('es', 'ES'),
+            builder: (context, child) =>
+                Container(color: const Color(0xFF1B4332), child: child!),
           );
         },
       ),

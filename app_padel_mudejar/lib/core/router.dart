@@ -60,7 +60,9 @@ GoRouter createRouter(AuthProvider authProvider) {
           ),
           GoRoute(
             path: '/reservar',
-            builder: (context, state) => const ReservarScreen(),
+            builder: (context, state) =>  ReservarScreen(
+              instalacionInicial: state.extra as Map<String, dynamic>?,
+            ),
           ),
           GoRoute(
             path: '/mis-reservas',

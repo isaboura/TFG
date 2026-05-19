@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../core/api_service.dart';
 import '../../core/theme.dart';
@@ -52,130 +53,142 @@ class _DetallePistaScreenState extends State<DetallePistaScreen> {
     final nombre = widget.instalacion['nombre'] ?? '';
     final tipo = widget.instalacion['tipo'] ?? '';
     final ubicacion = widget.instalacion['ubicacion'] as String?;
+    final activa = widget.instalacion['estadoPista'] == 'ACTIVA';
     final disponibles = _horas.where((h) => h['disponible'] == true).length;
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
-      body: CustomScrollView(
-        slivers: [
-          // App bar con imagen
-          SliverAppBar(
-            expandedHeight: 220,
-            pinned: true,
-            backgroundColor: Colors.white,
-            iconTheme: const IconThemeData(color: Colors.white),
-            flexibleSpace: FlexibleSpaceBar(
-              background: Stack(
-                fit: StackFit.expand,
-                children: [
-                  imagenUrl != null
-                      ? CachedNetworkImage(
-                          imageUrl: imagenUrl,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(color: Colors.grey.shade200),
-                          errorWidget: (context, url, error) => Container(
-                            color: AppTheme.primary.withOpacity(0.2),
-                            child: const Icon(Icons.sports_tennis_rounded, size: 80, color: AppTheme.primary),
+      backgroundColor: const Color(0xFF0D2B1E),
+      bottomNavigationBar: activa
+          ? Container(
+              decoration: const BoxDecoration(color: Colors.transparent),
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  child: ElevatedButton(
+                    onPressed: () => context.push('/reservar', extra: widget.instalacion),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF1B4332),
+                      minimumSize: const Size(double.infinity, 52),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      'Reservar esta pista',
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                    ),
+                  ),
+                ),
+              ),
+            )
+          : null,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF52B788),
+              Color(0xFF2D6A4F),
+              Color(0xFF0D2B1E),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              expandedHeight: 220,
+              pinned: true,
+              backgroundColor: Colors.transparent,
+              iconTheme: const IconThemeData(color: Colors.white),
+              flexibleSpace: FlexibleSpaceBar(
+                background: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    imagenUrl != null
+                        ? CachedNetworkImage(
+                            imageUrl: imagenUrl,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(color: const Color(0xFF1B4332)),
+                            errorWidget: (context, url, error) => Container(
+                              color: const Color(0xFF1B4332),
+                              child: const Icon(Icons.sports_tennis_rounded, size: 80, color: Colors.white54),
+                            ),
+                          )
+                        : Container(
+                            color: const Color(0xFF1B4332),
+                            child: const Icon(Icons.sports_tennis_rounded, size: 80, color: Colors.white54),
                           ),
-                        )
-                      : Container(
-                          color: AppTheme.primary.withOpacity(0.2),
-                          child: const Icon(Icons.sports_tennis_rounded, size: 80, color: AppTheme.primary),
+                    Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Colors.transparent, Color(0x80000000)],
                         ),
-                  // Gradiente
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.5),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 16,
+                      left: 16,
+                      right: 16,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(nombre,
+                              style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700)),
+                          if (ubicacion != null)
+                            Row(
+                              children: [
+                                const Icon(Icons.location_on_rounded, size: 13, color: Colors.white70),
+                                const SizedBox(width: 3),
+                                Text(ubicacion, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                              ],
+                            ),
                         ],
                       ),
                     ),
-                  ),
-                  // Nombre sobre la imagen
-                  Positioned(
-                    bottom: 16,
-                    left: 16,
-                    right: 16,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  ],
+                ),
+              ),
+            ),
+
+            SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Tipo y horas libres
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    child: Row(
                       children: [
-                        Text(
-                          nombre,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(20),
                           ),
+                          child: Text(tipo,
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
                         ),
-                        if (ubicacion != null)
-                          Row(
-                            children: [
-                              const Icon(Icons.location_on_rounded, size: 13, color: Colors.white70),
-                              const SizedBox(width: 3),
-                              Text(
-                                ubicacion,
-                                style: const TextStyle(color: Colors.white70, fontSize: 13),
-                              ),
-                            ],
+                        const Spacer(),
+                        if (!_loadingHoras)
+                          Text(
+                            '$disponibles horas libres hoy',
+                            style: TextStyle(
+                              color: disponibles > 0 ? Colors.white : Colors.redAccent,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
                           ),
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
 
-          SliverToBoxAdapter(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Info tipo y disponibilidad
-                Container(
-                  color: Colors.white,
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          tipo,
-                          style: const TextStyle(
-                            color: AppTheme.primary,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                      const Spacer(),
-                      if (!_loadingHoras)
-                        Text(
-                          '$disponibles horas libres hoy',
-                          style: TextStyle(
-                            color: disponibles > 0 ? AppTheme.primary : AppTheme.danger,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
+                  const SizedBox(height: 16),
 
-                const SizedBox(height: 8),
-
-                // Selector de fecha
-                Container(
-                  color: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: SizedBox(
+                  // Selector de fechas
+                  SizedBox(
                     height: 70,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
@@ -194,7 +207,9 @@ class _DetallePistaScreenState extends State<DetallePistaScreen> {
                             width: 52,
                             margin: const EdgeInsets.only(right: 8),
                             decoration: BoxDecoration(
-                              color: selected ? AppTheme.primary : Colors.grey.shade100,
+                              color: selected
+                                  ? Colors.white
+                                  : Colors.white.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Column(
@@ -205,7 +220,7 @@ class _DetallePistaScreenState extends State<DetallePistaScreen> {
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w600,
-                                    color: selected ? Colors.white70 : AppTheme.textMedium,
+                                    color: selected ? AppTheme.primary : Colors.white70,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
@@ -214,7 +229,7 @@ class _DetallePistaScreenState extends State<DetallePistaScreen> {
                                   style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w700,
-                                    color: selected ? Colors.white : AppTheme.textDark,
+                                    color: selected ? AppTheme.primary : Colors.white,
                                   ),
                                 ),
                               ],
@@ -224,99 +239,66 @@ class _DetallePistaScreenState extends State<DetallePistaScreen> {
                       },
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 8),
+                  const SizedBox(height: 16),
 
-                // Horas
-                Container(
-                  color: Colors.white,
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Horarios disponibles',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.textDark,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          _leyenda(AppTheme.primary, 'Disponible'),
-                          const SizedBox(width: 16),
-                          _leyenda(AppTheme.danger, 'Ocupado'),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      if (_loadingHoras)
-                        const Center(child: CircularProgressIndicator(color: AppTheme.primary))
-                      else if (_horas.isEmpty)
-                        const Center(
-                          child: Text(
-                            'No hay horarios disponibles para este día',
-                            style: TextStyle(color: AppTheme.textMedium),
-                          ),
-                        )
-                      else
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: _horas.map((h) {
-                            final disponible = h['disponible'] as bool;
-                            return Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: disponible
-                                    ? AppTheme.primary.withOpacity(0.1)
-                                    : AppTheme.danger.withOpacity(0.08),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
+                  // Horarios disponibles
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Horarios disponibles',
+                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
+                        const SizedBox(height: 16),
+                        if (_loadingHoras)
+                          const Center(child: CircularProgressIndicator(color: Colors.white))
+                        else if (_horas.isEmpty)
+                          const Center(
+                            child: Text('No hay horarios disponibles para este día',
+                                style: TextStyle(color: Colors.white70)),
+                          )
+                        else
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: _horas.map((h) {
+                              final disponible = h['disponible'] as bool;
+                              return Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                decoration: BoxDecoration(
                                   color: disponible
-                                      ? AppTheme.primary.withOpacity(0.3)
-                                      : AppTheme.danger.withOpacity(0.2),
+                                      ? Colors.white.withValues(alpha: 0.2)
+                                      : Colors.red.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: disponible
+                                        ? Colors.white.withValues(alpha: 0.5)
+                                        : Colors.redAccent.withValues(alpha: 0.4),
+                                  ),
                                 ),
-                              ),
-                              child: Text(
-                                h['hora'],
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: disponible ? AppTheme.primary : AppTheme.danger,
+                                child: Text(
+                                  h['hora'],
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: disponible ? Colors.white : Colors.redAccent,
+                                  ),
                                 ),
-                              ),
-                            ).animate().fadeIn(delay: const Duration(milliseconds: 50));
-                          }).toList(),
-                        ),
-                    ],
+                              ).animate().fadeIn(delay: const Duration(milliseconds: 50));
+                            }).toList(),
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _leyenda(Color color, String texto) {
-    return Row(
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(3),
-            border: Border.all(color: color.withOpacity(0.5)),
-          ),
+                  const SizedBox(height: 32),
+                ],
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 5),
-        Text(texto, style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w500)),
-      ],
+      ),
     );
   }
 

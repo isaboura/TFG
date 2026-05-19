@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../core/theme.dart';
 
 class MainScaffold extends StatelessWidget {
   final Widget child;
@@ -9,27 +8,19 @@ class MainScaffold extends StatelessWidget {
   int _currentIndex(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
     if (location.startsWith('/home')) return 0;
-    if (location.startsWith('/reservar') ||
-        location.startsWith('/mis-reservas')) return 1;
-    if (location.startsWith('/horarios')) return 2;
-    if (location.startsWith('/perfil')) return 3;
+    if (location.startsWith('/reservar') || location.startsWith('/mis-reservas')) return 1;
+    if (location.startsWith('/perfil')) return 2;
     return 0;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: child,
       bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 20,
-              offset: const Offset(0, -4),
-            ),
-          ],
+        decoration: const BoxDecoration(
+          color: Colors.transparent,
         ),
         child: SafeArea(
           child: Padding(
@@ -50,15 +41,9 @@ class MainScaffold extends StatelessWidget {
                   onTap: () => context.go('/mis-reservas'),
                 ),
                 _NavItem(
-                  icon: Icons.schedule_rounded,
-                  label: 'Horarios',
-                  selected: _currentIndex(context) == 2,
-                  onTap: () => context.go('/horarios'),
-                ),
-                _NavItem(
                   icon: Icons.person_rounded,
                   label: 'Perfil',
-                  selected: _currentIndex(context) == 3,
+                  selected: _currentIndex(context) == 2,
                   onTap: () => context.go('/perfil'),
                 ),
               ],
@@ -92,7 +77,7 @@ class _NavItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: selected
-              ? AppTheme.primary.withOpacity(0.12)
+              ? Colors.white.withValues(alpha: 0.2)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
@@ -101,7 +86,7 @@ class _NavItem extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: selected ? AppTheme.primary : AppTheme.textLight,
+              color: selected ? Colors.white : Colors.white60,
               size: 24,
             ),
             const SizedBox(height: 2),
@@ -109,9 +94,8 @@ class _NavItem extends StatelessWidget {
               label,
               style: TextStyle(
                 fontSize: 11,
-                fontWeight:
-                    selected ? FontWeight.w600 : FontWeight.w400,
-                color: selected ? AppTheme.primary : AppTheme.textLight,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                color: selected ? Colors.white : Colors.white60,
               ),
             ),
           ],

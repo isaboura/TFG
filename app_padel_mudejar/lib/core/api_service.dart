@@ -151,6 +151,7 @@ class ApiService {
       headers: {
         'Content-Type': 'application/json',
         'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json',
       },
       body: jsonEncode(datos),
     );
@@ -238,6 +239,22 @@ class ApiService {
         'X-Requested-With': 'XMLHttpRequest',
       },
       body: jsonEncode({'dniSocio': dniSocio}),
+    );
+    return jsonDecode(res.body);
+  }
+
+  // TOKENS
+  static Future<Map<String, dynamic>> registrarPushToken(
+    String dniSocio,
+    String pushToken,
+  ) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/socios/push-token'),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      body: jsonEncode({'dniSocio': dniSocio, 'push_token': pushToken}),
     );
     return jsonDecode(res.body);
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -7,26 +8,36 @@ import '../../core/api_service.dart';
 import '../../core/theme.dart';
 import '../../providers/auth_provider.dart';
 
+/// Pantalla principal para crear una nueva reserva.
+/// Tiene 3 pasos: elegir pista/duración → elegir fecha/hora → confirmar.
+/// Puede recibir una [instalacionInicial] si el usuario viene desde el detalle de una pista.
 class ReservarScreen extends StatefulWidget {
-  const ReservarScreen({super.key});
+  final Map<String, dynamic>? instalacionInicial;
+
+  const ReservarScreen({super.key, this.instalacionInicial});
 
   @override
   State<ReservarScreen> createState() => _ReservarScreenState();
 }
 
 class _ReservarScreenState extends State<ReservarScreen> {
+  // --- Datos cargados de la API ---
   List<dynamic> _instalaciones = [];
   List<dynamic> _tarifas = [];
+
+  // --- Selecciones del usuario ---
   Map<String, dynamic>? _instalacionSeleccionada;
   Map<String, dynamic>? _tarifaSeleccionada;
   DateTime _fechaSeleccionada = DateTime.now();
   String? _horaSeleccionada;
   List<Map<String, dynamic>> _horas = [];
 
+  // --- Estados de carga ---
   bool _loadingInstalaciones = true;
   bool _loadingHoras = false;
   bool _guardando = false;
 
+  // --- Paso actual del flujo (0, 1, 2) ---
   int _paso = 0;
 
   @override
@@ -35,6 +46,8 @@ class _ReservarScreenState extends State<ReservarScreen> {
     _cargarDatos();
   }
 
+  /// Carga las instalaciones y tarifas desde la API.
+  /// Si viene con una instalación preseleccionada, la marca y carga las horas disponibles.
   Future<void> _cargarDatos() async {
     try {
       final inst = await ApiService.getInstalaciones(estado: 'ACTIVA');
@@ -42,13 +55,25 @@ class _ReservarScreenState extends State<ReservarScreen> {
       setState(() {
         _instalaciones = inst;
         _tarifas = tar;
+        // Si viene desde el detalle de una pista, preseleccionamos esa pista
+        if (widget.instalacionInicial != null) {
+          _instalacionSeleccionada = inst.firstWhere(
+            (i) => i['idInstalacion'] == widget.instalacionInicial!['idInstalacion'],
+            orElse: () => inst.isNotEmpty ? inst[0] : null,
+          );
+          // Preseleccionar la primera tarifa por defecto
+          if (tar.isNotEmpty) _tarifaSeleccionada = tar[0];
+        }
         _loadingInstalaciones = false;
       });
+      // Si hay pista preseleccionada, cargamos las horas directamente
+      if (widget.instalacionInicial != null) _cargarHoras();
     } catch (e) {
       setState(() => _loadingInstalaciones = false);
     }
   }
 
+  /// Carga las horas disponibles para la instalación, tarifa y fecha seleccionadas.
   Future<void> _cargarHoras() async {
     if (_instalacionSeleccionada == null || _tarifaSeleccionada == null) return;
     setState(() {
@@ -56,7 +81,6 @@ class _ReservarScreenState extends State<ReservarScreen> {
       _horaSeleccionada = null;
       _horas = [];
     });
-
     try {
       final fecha = DateFormat('yyyy-MM-dd').format(_fechaSeleccionada);
       final result = await ApiService.getHorasDisponibles(
@@ -64,10 +88,8 @@ class _ReservarScreenState extends State<ReservarScreen> {
         instalacion: _instalacionSeleccionada!['idInstalacion'],
         duracion: _tarifaSeleccionada!['duracionMinutos'],
       );
-      final horas = (result['horas'] as List<dynamic>? ?? [])
-          .cast<Map<String, dynamic>>();
       setState(() {
-        _horas = horas;
+        _horas = (result['horas'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
         _loadingHoras = false;
       });
     } catch (_) {
@@ -75,12 +97,9 @@ class _ReservarScreenState extends State<ReservarScreen> {
     }
   }
 
+  /// Envía la reserva a la API y muestra el resultado al usuario.
   Future<void> _confirmarReserva() async {
-    if (_instalacionSeleccionada == null ||
-        _tarifaSeleccionada == null ||
-        _horaSeleccionada == null)
-      return;
-
+    if (_instalacionSeleccionada == null || _tarifaSeleccionada == null || _horaSeleccionada == null) return;
     setState(() => _guardando = true);
 
     final auth = context.read<AuthProvider>();
@@ -94,9 +113,7 @@ class _ReservarScreenState extends State<ReservarScreen> {
         idTarifa: _tarifaSeleccionada!['idTarifa'],
         fechaHora: fechaHora,
       );
-
       if (!mounted) return;
-
       if (result['success'] == true) {
         _mostrarExito();
       } else {
@@ -109,6 +126,7 @@ class _ReservarScreenState extends State<ReservarScreen> {
     }
   }
 
+  /// Muestra un diálogo de confirmación con los detalles de la reserva creada.
   void _mostrarExito() {
     showDialog(
       context: context,
@@ -117,17 +135,11 @@ class _ReservarScreenState extends State<ReservarScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Icono de check en círculo verde
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
-                color: Color(0xFFE8F8EF),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.check_rounded,
-                color: AppTheme.primary,
-                size: 40,
-              ),
+              decoration: const BoxDecoration(color: Color(0xFFE8F8EF), shape: BoxShape.circle),
+              child: const Icon(Icons.check_rounded, color: AppTheme.primary, size: 40),
             ),
             const SizedBox(height: 16),
             const Text(
@@ -136,6 +148,7 @@ class _ReservarScreenState extends State<ReservarScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
+            // Detalles de la reserva creada
             Text(
               '${_instalacionSeleccionada!['nombre']}\n'
               '${DateFormat('EEEE d MMMM', 'es').format(_fechaSeleccionada)} a las $_horaSeleccionada',
@@ -148,24 +161,16 @@ class _ReservarScreenState extends State<ReservarScreen> {
           TextButton(
             onPressed: () {
               Navigator.of(context, rootNavigator: true).pop();
-              setState(() {
-                _paso = 0;
-                _instalacionSeleccionada = null;
-                _tarifaSeleccionada = null;
-                _horaSeleccionada = null;
-                _horas = [];
-              });
+              context.pop(); // Vuelve a la pantalla anterior
             },
-            child: const Text(
-              'Aceptar',
-              style: TextStyle(color: AppTheme.primary),
-            ),
+            child: const Text('Aceptar', style: TextStyle(color: AppTheme.primary)),
           ),
         ],
       ),
     );
   }
 
+  /// Muestra un snackbar con el mensaje de error.
   void _mostrarError(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(msg), backgroundColor: AppTheme.danger),
@@ -175,9 +180,14 @@ class _ReservarScreenState extends State<ReservarScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: const Color(0xFF52B788),
       appBar: AppBar(
-        title: const Text('Reservar Pista'),
+        title: const Text('Reservar Pista', style: TextStyle(color: Colors.white)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        iconTheme: const IconThemeData(color: Colors.white),
+        // Botón de atrás solo disponible si no estamos en el paso 0
         leading: _paso > 0
             ? IconButton(
                 icon: const Icon(Icons.arrow_back_ios_rounded),
@@ -185,69 +195,73 @@ class _ReservarScreenState extends State<ReservarScreen> {
               )
             : null,
       ),
-      body: _loadingInstalaciones
-          ? const Center(
-              child: CircularProgressIndicator(color: AppTheme.primary),
-            )
-          : Column(
-              children: [
-                _buildStepIndicator(),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
-                    child: [_buildPaso0(), _buildPaso1(), _buildPaso2()][_paso],
+      body: Container(
+        // Fondo con degradado verde claro → verde oscuro
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF52B788), Color(0xFF2D6A4F), Color(0xFF0D2B1E)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: _loadingInstalaciones
+            ? const Center(child: CircularProgressIndicator(color: Colors.white))
+            : Column(
+                children: [
+                  // Indicador de pasos (1, 2, 3)
+                  _buildStepIndicator(),
+                  // Contenido del paso actual
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(20),
+                      child: [_buildPaso0(), _buildPaso1(), _buildPaso2()][_paso],
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+      ),
     );
   }
 
+  /// Construye el indicador de progreso con los 3 pasos.
   Widget _buildStepIndicator() {
     final labels = ['Pista', 'Fecha', 'Confirmar'];
-    return Container(
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      color: Colors.white,
       child: Row(
         children: List.generate(3, (i) {
-          final active = i == _paso;
-          final done = i < _paso;
+          final active = i == _paso;  // Paso actual
+          final done = i < _paso;     // Paso ya completado
           return Expanded(
             child: Row(
               children: [
+                // Línea conectora izquierda
                 if (i > 0)
                   Expanded(
                     child: Container(
                       height: 2,
-                      color: done ? AppTheme.primary : Colors.grey.shade200,
+                      color: done ? Colors.white : Colors.white.withValues(alpha: 0.3),
                     ),
                   ),
+                // Círculo del paso
                 Column(
                   children: [
                     Container(
                       width: 28,
                       height: 28,
                       decoration: BoxDecoration(
-                        color: done || active
-                            ? AppTheme.primary
-                            : Colors.grey.shade200,
+                        color: done || active ? Colors.white : Colors.white.withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                       ),
                       child: Center(
                         child: done
-                            ? const Icon(
-                                Icons.check,
-                                color: Colors.white,
-                                size: 14,
-                              )
+                            ? const Icon(Icons.check, color: Color(0xFF1B4332), size: 14)
                             : Text(
                                 '${i + 1}',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: active
-                                      ? Colors.white
-                                      : AppTheme.textLight,
+                                  color: active ? const Color(0xFF1B4332) : Colors.white60,
                                 ),
                               ),
                       ),
@@ -257,21 +271,18 @@ class _ReservarScreenState extends State<ReservarScreen> {
                       labels[i],
                       style: TextStyle(
                         fontSize: 10,
-                        color: active || done
-                            ? AppTheme.primary
-                            : AppTheme.textLight,
+                        color: active || done ? Colors.white : Colors.white60,
                         fontWeight: active ? FontWeight.w600 : FontWeight.w400,
                       ),
                     ),
                   ],
                 ),
+                // Línea conectora derecha
                 if (i < 2)
                   Expanded(
                     child: Container(
                       height: 2,
-                      color: i < _paso
-                          ? AppTheme.primary
-                          : Colors.grey.shade200,
+                      color: i < _paso ? Colors.white : Colors.white.withValues(alpha: 0.3),
                     ),
                   ),
               ],
@@ -282,55 +293,62 @@ class _ReservarScreenState extends State<ReservarScreen> {
     );
   }
 
+  /// Paso 0: Selección de pista (si no viene preseleccionada) y duración/tarifa.
   Widget _buildPaso0() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionTitle('Elige una pista'),
-        const SizedBox(height: 12),
-        ..._instalaciones.map(
-          (inst) => _InstalacionCard(
-            instalacion: inst,
-            selected:
-                _instalacionSeleccionada?['idInstalacion'] ==
-                inst['idInstalacion'],
-            onTap: () => setState(() => _instalacionSeleccionada = inst),
-          ),
-        ),
-        const SizedBox(height: 24),
+        // Solo mostramos el selector de pista si no viene preseleccionada
+        if (widget.instalacionInicial == null) ...[
+          _sectionTitle('Elige una pista'),
+          const SizedBox(height: 12),
+          ..._instalaciones.map((inst) => _InstalacionCard(
+                instalacion: inst,
+                selected: _instalacionSeleccionada?['idInstalacion'] == inst['idInstalacion'],
+                onTap: () => setState(() => _instalacionSeleccionada = inst),
+              )),
+          const SizedBox(height: 24),
+        ],
         _sectionTitle('Elige la duración'),
         const SizedBox(height: 12),
-        ..._tarifas.map(
-          (tarifa) => _TarifaCard(
-            tarifa: tarifa,
-            selected: _tarifaSeleccionada?['idTarifa'] == tarifa['idTarifa'],
-            onTap: () => setState(() => _tarifaSeleccionada = tarifa),
-          ),
-        ),
+        ..._tarifas.map((tarifa) => _TarifaCard(
+              tarifa: tarifa,
+              selected: _tarifaSeleccionada?['idTarifa'] == tarifa['idTarifa'],
+              onTap: () => setState(() => _tarifaSeleccionada = tarifa),
+            )),
         const SizedBox(height: 32),
+        // Botón continuar — solo activo si hay pista y tarifa seleccionadas
         ElevatedButton(
-          onPressed:
-              (_instalacionSeleccionada != null && _tarifaSeleccionada != null)
+          onPressed: (_instalacionSeleccionada != null && _tarifaSeleccionada != null)
               ? () {
                   setState(() => _paso = 1);
                   _cargarHoras();
                 }
               : null,
-          child: const Text('Continuar'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.white,
+            foregroundColor: const Color(0xFF1B4332),
+            minimumSize: const Size(double.infinity, 52),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            elevation: 0,
+          ),
+          child: const Text('Continuar', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
         ),
       ],
     );
   }
 
+  /// Paso 1: Selección de fecha con calendario y hora disponible.
   Widget _buildPaso1() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _sectionTitle('Selecciona la fecha'),
         const SizedBox(height: 12),
+        // Calendario con estilo adaptado al fondo verde
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Colors.white.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(16),
           ),
           child: TableCalendar(
@@ -340,21 +358,27 @@ class _ReservarScreenState extends State<ReservarScreen> {
             selectedDayPredicate: (day) => isSameDay(day, _fechaSeleccionada),
             onDaySelected: (selected, focused) {
               setState(() => _fechaSeleccionada = selected);
-              _cargarHoras();
+              _cargarHoras(); // Recargamos horas al cambiar fecha
             },
             calendarStyle: CalendarStyle(
-              selectedDecoration: const BoxDecoration(
-                color: AppTheme.primary,
-                shape: BoxShape.circle,
-              ),
-              todayDecoration: BoxDecoration(
-                color: AppTheme.primary.withOpacity(0.3),
-                shape: BoxShape.circle,
-              ),
+              selectedDecoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+              selectedTextStyle: const TextStyle(color: Color(0xFF1B4332), fontWeight: FontWeight.w700),
+              todayDecoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.3), shape: BoxShape.circle),
+              todayTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+              defaultTextStyle: const TextStyle(color: Colors.white),
+              weekendTextStyle: const TextStyle(color: Colors.white70),
+              outsideTextStyle: const TextStyle(color: Colors.white38),
             ),
             headerStyle: const HeaderStyle(
               formatButtonVisible: false,
               titleCentered: true,
+              titleTextStyle: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16),
+              leftChevronIcon: Icon(Icons.chevron_left, color: Colors.white),
+              rightChevronIcon: Icon(Icons.chevron_right, color: Colors.white),
+            ),
+            daysOfWeekStyle: const DaysOfWeekStyle(
+              weekdayStyle: TextStyle(color: Colors.white70, fontSize: 12),
+              weekendStyle: TextStyle(color: Colors.white70, fontSize: 12),
             ),
             locale: 'es_ES',
           ),
@@ -362,17 +386,11 @@ class _ReservarScreenState extends State<ReservarScreen> {
         const SizedBox(height: 24),
         _sectionTitle('Elige una hora'),
         const SizedBox(height: 12),
+        // Grid de horas disponibles
         if (_loadingHoras)
-          const Center(
-            child: CircularProgressIndicator(color: AppTheme.primary),
-          )
+          const Center(child: CircularProgressIndicator(color: Colors.white))
         else if (_horas.isEmpty)
-          const Center(
-            child: Text(
-              'No hay horas disponibles para este día',
-              style: TextStyle(color: AppTheme.textMedium),
-            ),
-          )
+          const Center(child: Text('No hay horas disponibles para este día', style: TextStyle(color: Colors.white70)))
         else
           Wrap(
             spacing: 10,
@@ -382,24 +400,20 @@ class _ReservarScreenState extends State<ReservarScreen> {
               final disponible = h['disponible'] as bool;
               final selected = _horaSeleccionada == hora;
               return GestureDetector(
-                onTap: disponible
-                    ? () => setState(() => _horaSeleccionada = hora)
-                    : null,
+                onTap: disponible ? () => setState(() => _horaSeleccionada = hora) : null,
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   decoration: BoxDecoration(
+                    // Blanco si seleccionado, semitransparente si disponible, casi invisible si ocupado
                     color: !disponible
-                        ? Colors.grey.shade100
+                        ? Colors.white.withValues(alpha: 0.05)
                         : selected
-                        ? AppTheme.primary
-                        : Colors.white,
+                            ? Colors.white
+                            : Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: selected ? AppTheme.primary : Colors.grey.shade200,
+                      color: selected ? Colors.white : Colors.white.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Text(
@@ -408,10 +422,10 @@ class _ReservarScreenState extends State<ReservarScreen> {
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: !disponible
-                          ? AppTheme.textLight
+                          ? Colors.white30
                           : selected
-                          ? Colors.white
-                          : AppTheme.textDark,
+                              ? const Color(0xFF1B4332)
+                              : Colors.white,
                     ),
                   ),
                 ),
@@ -419,124 +433,97 @@ class _ReservarScreenState extends State<ReservarScreen> {
             }).toList(),
           ),
         const SizedBox(height: 32),
+        // Botón continuar — solo activo si hay hora seleccionada
         ElevatedButton(
-          onPressed: _horaSeleccionada != null
-              ? () => setState(() => _paso = 2)
-              : null,
-          child: const Text('Continuar'),
+          onPressed: _horaSeleccionada != null ? () => setState(() => _paso = 2) : null,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.white,
+            foregroundColor: const Color(0xFF1B4332),
+            minimumSize: const Size(double.infinity, 52),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            elevation: 0,
+          ),
+          child: const Text('Continuar', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
         ),
       ],
     );
   }
 
+  /// Paso 2: Resumen de la reserva y confirmación final.
   Widget _buildPaso2() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _sectionTitle('Confirma tu reserva'),
         const SizedBox(height: 20),
+        // Tarjeta resumen con todos los datos de la reserva
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Colors.white.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
           ),
           child: Column(
             children: [
-              _resumenRow(
-                Icons.sports_tennis_rounded,
-                'Pista',
-                _instalacionSeleccionada?['nombre'] ?? '',
-              ),
-              const Divider(height: 24),
-              _resumenRow(
-                Icons.timer_rounded,
-                'Duración',
-                '${_tarifaSeleccionada?['duracionMinutos']} min',
-              ),
-              const Divider(height: 24),
-              _resumenRow(
-                Icons.calendar_today_rounded,
-                'Fecha',
-                DateFormat('EEEE d MMMM', 'es').format(_fechaSeleccionada),
-              ),
-              const Divider(height: 24),
-              _resumenRow(
-                Icons.access_time_rounded,
-                'Hora',
-                _horaSeleccionada ?? '',
-              ),
-              const Divider(height: 24),
-              _resumenRow(
-                Icons.euro_rounded,
-                'Precio',
-                '€${_tarifaSeleccionada?['precio']}',
-              ),
+              _resumenRow(Icons.sports_tennis_rounded, 'Pista', _instalacionSeleccionada?['nombre'] ?? ''),
+              Divider(height: 24, color: Colors.white.withValues(alpha: 0.2)),
+              _resumenRow(Icons.timer_rounded, 'Duración', '${_tarifaSeleccionada?['duracionMinutos']} min'),
+              Divider(height: 24, color: Colors.white.withValues(alpha: 0.2)),
+              _resumenRow(Icons.calendar_today_rounded, 'Fecha', DateFormat('EEEE d MMMM', 'es').format(_fechaSeleccionada)),
+              Divider(height: 24, color: Colors.white.withValues(alpha: 0.2)),
+              _resumenRow(Icons.access_time_rounded, 'Hora', _horaSeleccionada ?? ''),
+              Divider(height: 24, color: Colors.white.withValues(alpha: 0.2)),
+              _resumenRow(Icons.euro_rounded, 'Precio', '€${_tarifaSeleccionada?['precio']}'),
             ],
           ),
         ).animate().fadeIn().slideY(begin: 0.1, end: 0),
         const SizedBox(height: 32),
+        // Botón de confirmación final
         ElevatedButton(
           onPressed: _guardando ? null : _confirmarReserva,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.white,
+            foregroundColor: const Color(0xFF1B4332),
+            minimumSize: const Size(double.infinity, 52),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            elevation: 0,
+          ),
           child: _guardando
-              ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
-                  ),
-                )
-              : const Text('Confirmar reserva'),
+              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Color(0xFF1B4332), strokeWidth: 2))
+              : const Text('Confirmar reserva', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
         ).animate().fadeIn(delay: 200.ms),
       ],
     );
   }
 
+  /// Fila de resumen con icono, etiqueta y valor.
   Widget _resumenRow(IconData icon, String label, String value) {
     return Row(
       children: [
-        Icon(icon, color: AppTheme.primary, size: 20),
+        Icon(icon, color: Colors.white70, size: 20),
         const SizedBox(width: 12),
-        Text(
-          label,
-          style: const TextStyle(color: AppTheme.textMedium, fontSize: 14),
-        ),
+        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 14)),
         const Spacer(),
-        Text(
-          value,
-          style: const TextStyle(
-            color: AppTheme.textDark,
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-          ),
-        ),
+        Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
       ],
     );
   }
 
+  /// Título de sección en blanco.
   Widget _sectionTitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w700,
-        color: AppTheme.textDark,
-      ),
-    );
+    return Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white));
   }
 }
 
+/// Tarjeta para seleccionar una instalación/pista.
+/// Se resalta en blanco cuando está seleccionada.
 class _InstalacionCard extends StatelessWidget {
   final dynamic instalacion;
   final bool selected;
   final VoidCallback onTap;
 
-  const _InstalacionCard({
-    required this.instalacion,
-    required this.selected,
-    required this.onTap,
-  });
+  const _InstalacionCard({required this.instalacion, required this.selected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -547,53 +534,37 @@ class _InstalacionCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: selected ? AppTheme.primary.withOpacity(0.08) : Colors.white,
+          color: selected ? Colors.white : Colors.white.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: selected ? AppTheme.primary : Colors.grey.shade200,
+            color: selected ? Colors.white : Colors.white.withValues(alpha: 0.2),
             width: selected ? 2 : 1,
           ),
         ),
         child: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppTheme.primary.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.sports_tennis_rounded,
-                color: AppTheme.primary,
-                size: 22,
-              ),
-            ),
+            Icon(Icons.sports_tennis_rounded,
+                color: selected ? const Color(0xFF1B4332) : Colors.white70, size: 22),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    instalacion['nombre'] ?? '',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                      color: AppTheme.textDark,
-                    ),
-                  ),
+                  Text(instalacion['nombre'] ?? '',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: selected ? const Color(0xFF1B4332) : Colors.white)),
                   if (instalacion['ubicacion'] != null)
-                    Text(
-                      instalacion['ubicacion'],
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.textMedium,
-                      ),
-                    ),
+                    Text(instalacion['ubicacion'],
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: selected ? const Color(0xFF2D6A4F) : Colors.white60)),
                 ],
               ),
             ),
-            if (selected)
-              const Icon(Icons.check_circle_rounded, color: AppTheme.primary),
+            // Check de seleccionado
+            if (selected) const Icon(Icons.check_circle_rounded, color: Color(0xFF1B4332)),
           ],
         ),
       ),
@@ -601,16 +572,14 @@ class _InstalacionCard extends StatelessWidget {
   }
 }
 
+/// Tarjeta para seleccionar una tarifa/duración.
+/// Muestra el nombre, descripción y precio.
 class _TarifaCard extends StatelessWidget {
   final dynamic tarifa;
   final bool selected;
   final VoidCallback onTap;
 
-  const _TarifaCard({
-    required this.tarifa,
-    required this.selected,
-    required this.onTap,
-  });
+  const _TarifaCard({required this.tarifa, required this.selected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -621,41 +590,34 @@ class _TarifaCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: selected ? AppTheme.primary.withOpacity(0.08) : Colors.white,
+          color: selected ? Colors.white : Colors.white.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: selected ? AppTheme.primary : Colors.grey.shade200,
+            color: selected ? Colors.white : Colors.white.withValues(alpha: 0.2),
             width: selected ? 2 : 1,
           ),
         ),
         child: Row(
           children: [
-            const Icon(Icons.timer_rounded, color: AppTheme.primary, size: 20),
+            Icon(Icons.timer_rounded,
+                color: selected ? const Color(0xFF1B4332) : Colors.white70, size: 20),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                '${tarifa['nombre']} — ${tarifa['descripcion'] ?? ''}',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                ),
-              ),
+              child: Text('${tarifa['nombre']} — ${tarifa['descripcion'] ?? ''}',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                      color: selected ? const Color(0xFF1B4332) : Colors.white)),
             ),
-            Text(
-              '€${tarifa['precio']}',
-              style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                color: AppTheme.primary,
-                fontSize: 15,
-              ),
-            ),
+            // Precio de la tarifa
+            Text('€${tarifa['precio']}',
+                style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: selected ? const Color(0xFF1B4332) : Colors.white,
+                    fontSize: 15)),
             if (selected) ...[
               const SizedBox(width: 8),
-              const Icon(
-                Icons.check_circle_rounded,
-                color: AppTheme.primary,
-                size: 20,
-              ),
+              const Icon(Icons.check_circle_rounded, color: Color(0xFF1B4332), size: 20),
             ],
           ],
         ),

@@ -3,7 +3,7 @@
 
 
     <application
-        android:label="app_padel_mudejar"
+        android:label="Padel Mudéjar"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
