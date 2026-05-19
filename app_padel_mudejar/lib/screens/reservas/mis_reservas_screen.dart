@@ -11,9 +11,9 @@ import '../../providers/auth_provider.dart';
 /// Muestra dos pestañas:
 /// - Próximas: reservas futuras confirmadas (se pueden editar o cancelar)
 /// - Historial: reservas pasadas (se puede dejar reseña si está confirmada)
+/// Todo tiene el degradado verde de la app, incluyendo cards y bottom sheets.
 class MisReservasScreen extends StatefulWidget {
   const MisReservasScreen({super.key});
-
   @override
   State<MisReservasScreen> createState() => _MisReservasScreenState();
 }
@@ -45,7 +45,6 @@ class _MisReservasScreenState extends State<MisReservasScreen>
   }
 
   /// Carga las reservas futuras y pasadas del socio desde la API.
-  /// Actualiza [_datos] con el resultado y desactiva el indicador de carga.
   Future<void> _cargar() async {
     final auth = context.read<AuthProvider>();
     try {
@@ -55,7 +54,6 @@ class _MisReservasScreenState extends State<MisReservasScreen>
         _loading = false;
       });
     } catch (_) {
-      // Si hay error, ocultamos el indicador de carga igualmente
       setState(() => _loading = false);
     }
   }
@@ -63,7 +61,6 @@ class _MisReservasScreenState extends State<MisReservasScreen>
   /// Muestra un diálogo de confirmación antes de cancelar una reserva.
   /// Si el usuario confirma, llama a la API y recarga la lista.
   Future<void> _cancelar(int idReserva) async {
-    // Diálogo de confirmación
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
@@ -82,18 +79,16 @@ class _MisReservasScreenState extends State<MisReservasScreen>
         ],
       ),
     );
-
-    // Si el usuario cancela el diálogo, salimos
     if (confirm != true) return;
 
-    // Llamada a la API para cancelar la reserva
+    // Llamada a la API para cancelar
     final result = await ApiService.cancelarReserva(idReserva);
     if (mounted) {
       if (result['success'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Reserva cancelada'), backgroundColor: AppTheme.primary),
         );
-        _cargar(); // Recargamos la lista tras cancelar
+        _cargar();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(result['mensaje'] ?? 'Error al cancelar'), backgroundColor: AppTheme.danger),
@@ -102,8 +97,7 @@ class _MisReservasScreenState extends State<MisReservasScreen>
     }
   }
 
-  /// Abre el bottom sheet [_EditarReservaBottomSheet] para modificar
-  /// la pista, tarifa, fecha y hora de una reserva existente.
+  /// Abre el bottom sheet con degradado para editar una reserva.
   void _mostrarEditarReserva(dynamic reserva) {
     final auth = context.read<AuthProvider>();
     showModalBottomSheet(
@@ -118,14 +112,13 @@ class _MisReservasScreenState extends State<MisReservasScreen>
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Reserva actualizada'), backgroundColor: AppTheme.primary),
           );
-          _cargar(); // Recargamos tras actualizar
+          _cargar();
         },
       ),
     );
   }
 
-  /// Abre el bottom sheet [_ResenaBottomSheet] para que el socio
-  /// deje una reseña de la pista tras haber jugado.
+  /// Abre el bottom sheet con degradado para dejar una reseña.
   void _mostrarBottomSheetResena(dynamic reserva) {
     final auth = context.read<AuthProvider>();
     showModalBottomSheet(
@@ -166,27 +159,21 @@ class _MisReservasScreenState extends State<MisReservasScreen>
         child: _loading
             ? const Center(child: CircularProgressIndicator(color: Colors.white))
             : NestedScrollView(
-                // NestedScrollView permite que el SliverAppBar se oculte
-                // automáticamente al hacer scroll hacia abajo y reaparezca al subir
+                // NestedScrollView permite que el SliverAppBar se oculte al hacer scroll
                 headerSliverBuilder: (context, innerBoxIsScrolled) => [
                   SliverAppBar(
-                    // floating: true → el AppBar aparece al empezar a subir
-                    // snap: true → aparece completamente de golpe, no a medias
+                    // floating + snap: aparece/desaparece con animación al hacer scroll
                     floating: true,
                     snap: true,
                     backgroundColor: Colors.transparent,
                     surfaceTintColor: Colors.transparent,
                     elevation: 0,
-                    // Título de la pantalla en blanco
+                    // Título en blanco
                     title: const Text(
                       'Mis Reservas',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.white),
                     ),
-                    // TabBar con las pestañas Próximas e Historial
+                    // TabBar con pestañas en blanco
                     bottom: TabBar(
                       controller: _tabController,
                       labelColor: Colors.white,
@@ -200,20 +187,13 @@ class _MisReservasScreenState extends State<MisReservasScreen>
                     ),
                   ),
                 ],
-                // Contenido de cada pestaña
                 body: TabBarView(
                   controller: _tabController,
                   children: [
-                    // Pestaña de reservas próximas
-                    _buildLista(
-                      (_datos?['futuras'] as List<dynamic>? ?? []),
-                      futuras: true,
-                    ),
-                    // Pestaña de historial
-                    _buildLista(
-                      (_datos?['pasadas'] as List<dynamic>? ?? []),
-                      futuras: false,
-                    ),
+                    // Pestaña de reservas próximas (editar/cancelar)
+                    _buildLista((_datos?['futuras'] as List<dynamic>? ?? []), futuras: true),
+                    // Pestaña de historial (dejar reseña)
+                    _buildLista((_datos?['pasadas'] as List<dynamic>? ?? []), futuras: false),
                   ],
                 ),
               ),
@@ -224,7 +204,7 @@ class _MisReservasScreenState extends State<MisReservasScreen>
   /// Construye la lista de tarjetas de reserva para cada pestaña.
   /// [futuras] determina si mostramos botones de editar/cancelar o de reseña.
   Widget _buildLista(List<dynamic> reservas, {required bool futuras}) {
-    // Estado vacío con icono y mensaje descriptivo
+    // Estado vacío con icono y mensaje descriptivo en blanco
     if (reservas.isEmpty) {
       return Center(
         child: Column(
@@ -256,28 +236,22 @@ class _MisReservasScreenState extends State<MisReservasScreen>
           final r = reservas[i];
           return _ReservaCard(
             reserva: r,
-            // Solo mostramos cancelar en futuras confirmadas
             mostrarCancelar: futuras && r['estado'] == 'CONFIRMADA',
-            // Solo mostramos editar en futuras confirmadas
             mostrarEditar: futuras && r['estado'] == 'CONFIRMADA',
-            // Solo mostramos reseña en pasadas confirmadas
             mostrarResena: !futuras && r['estado'] == 'CONFIRMADA',
             onCancelar: () => _cancelar(r['idReserva']),
             onEditar: () => _mostrarEditarReserva(r),
             onResena: () => _mostrarBottomSheetResena(r),
-          )
-              .animate()
-              .fadeIn(delay: Duration(milliseconds: i * 80))
-              .slideY(begin: 0.1, end: 0);
+          ).animate().fadeIn(delay: Duration(milliseconds: i * 80)).slideY(begin: 0.1, end: 0);
         },
       ),
     );
   }
 }
 
-/// Tarjeta individual que muestra los datos de una reserva.
-/// Incluye nombre de la pista, fecha, tarifa, precio y estado.
-/// Opcionalmente muestra botones de editar/cancelar o de reseña.
+/// Tarjeta individual de reserva con fondo semitransparente sobre el degradado.
+/// Muestra pista, fecha, tarifa, precio y estado.
+/// Botones de editar/cancelar para futuras, reseña para pasadas.
 class _ReservaCard extends StatelessWidget {
   final dynamic reserva;
   final bool mostrarCancelar;
@@ -297,16 +271,27 @@ class _ReservaCard extends StatelessWidget {
     required this.onResena,
   });
 
-  /// Devuelve el color del badge según el estado de la reserva.
-  /// CONFIRMADA → verde, CANCELADA → rojo, otros → gris
+  /// Color del badge según el estado: verde=confirmada, rojo=cancelada, gris=otros.
   Color _estadoColor(String estado) {
     switch (estado) {
       case 'CONFIRMADA':
-        return AppTheme.primary;
+        return Colors.white;
       case 'CANCELADA':
-        return AppTheme.danger;
+        return Colors.redAccent;
       default:
-        return AppTheme.textMedium;
+        return Colors.white60;
+    }
+  }
+
+  /// Color de fondo del badge de estado
+  Color _estadoBgColor(String estado) {
+    switch (estado) {
+      case 'CONFIRMADA':
+        return Colors.white.withValues(alpha: 0.25);
+      case 'CANCELADA':
+        return Colors.redAccent.withValues(alpha: 0.25);
+      default:
+        return Colors.white.withValues(alpha: 0.15);
     }
   }
 
@@ -319,10 +304,10 @@ class _ReservaCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        // Las tarjetas se mantienen blancas sobre el fondo verde degradado
-        color: Colors.white,
+        // Card semitransparente para integrarse con el degradado verde
+        color: Colors.white.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade100),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -330,28 +315,28 @@ class _ReservaCard extends StatelessWidget {
           // --- Cabecera: icono + nombre de pista + badge de estado ---
           Row(
             children: [
-              // Icono de pista con fondo verde claro
+              // Icono de pista con fondo semitransparente blanco
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppTheme.primary.withValues(alpha: 0.1),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.sports_tennis_rounded, color: AppTheme.primary, size: 20),
+                child: const Icon(Icons.sports_tennis_rounded, color: Colors.white, size: 20),
               ),
               const SizedBox(width: 12),
-              // Nombre de la instalación
+              // Nombre de la instalación en blanco
               Expanded(
                 child: Text(
                   reserva['instalacion'] ?? '',
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppTheme.textDark),
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.white),
                 ),
               ),
-              // Badge de estado (CONFIRMADA / CANCELADA)
+              // Badge de estado adaptado al fondo verde
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: _estadoColor(estado).withValues(alpha: 0.12),
+                  color: _estadoBgColor(estado),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -363,7 +348,7 @@ class _ReservaCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // --- Información: fecha, tarifa y precio ---
+          // --- Información: fecha, tarifa y precio en blanco semitransparente ---
           Row(
             children: [
               _infoChip(Icons.calendar_today_rounded, fechaStr),
@@ -377,7 +362,7 @@ class _ReservaCard extends StatelessWidget {
           // --- Botones de Editar y Cancelar (solo reservas futuras confirmadas) ---
           if (mostrarEditar || mostrarCancelar) ...[
             const SizedBox(height: 12),
-            const Divider(height: 1),
+            Divider(color: Colors.white.withValues(alpha: 0.2), height: 1),
             const SizedBox(height: 12),
             Row(
               children: [
@@ -388,17 +373,21 @@ class _ReservaCard extends StatelessWidget {
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.edit_rounded, color: AppTheme.secondary, size: 16),
+                          // Icono de editar en azul claro para contraste
+                          Icon(Icons.edit_rounded, color: Colors.white, size: 16),
                           SizedBox(width: 6),
                           Text('Editar',
-                              style: TextStyle(color: AppTheme.secondary, fontWeight: FontWeight.w600, fontSize: 13)),
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13)),
                         ],
                       ),
                     ),
                   ),
-                // Separador vertical entre botones
+                // Separador vertical semitransparente entre botones
                 if (mostrarEditar && mostrarCancelar)
-                  Container(width: 1, height: 20, color: Colors.grey.shade200),
+                  Container(width: 1, height: 20, color: Colors.white.withValues(alpha: 0.3)),
                 if (mostrarCancelar)
                   Expanded(
                     child: GestureDetector(
@@ -406,10 +395,14 @@ class _ReservaCard extends StatelessWidget {
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.cancel_outlined, color: AppTheme.danger, size: 16),
+                          // Icono de cancelar en rojo claro
+                          Icon(Icons.cancel_outlined, color: Colors.white70, size: 16),
                           SizedBox(width: 6),
                           Text('Cancelar',
-                              style: TextStyle(color: AppTheme.danger, fontWeight: FontWeight.w600, fontSize: 13)),
+                              style: TextStyle(
+                                  color: Colors.white70,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13)),
                         ],
                       ),
                     ),
@@ -421,17 +414,21 @@ class _ReservaCard extends StatelessWidget {
           // --- Botón de reseña (solo reservas pasadas confirmadas) ---
           if (mostrarResena) ...[
             const SizedBox(height: 12),
-            const Divider(height: 1),
+            Divider(color: Colors.white.withValues(alpha: 0.2), height: 1),
             const SizedBox(height: 12),
             GestureDetector(
               onTap: onResena,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  // Estrella dorada para dejar reseña
                   const Icon(Icons.star_rounded, color: AppTheme.accent, size: 18),
                   const SizedBox(width: 6),
                   Text('Dejar reseña',
-                      style: TextStyle(color: AppTheme.accent, fontWeight: FontWeight.w600, fontSize: 13)),
+                      style: TextStyle(
+                          color: AppTheme.accent,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13)),
                 ],
               ),
             ),
@@ -441,26 +438,26 @@ class _ReservaCard extends StatelessWidget {
     );
   }
 
-  /// Pequeño chip de información con un icono y un texto descriptivo.
-  /// Se usa para mostrar fecha, tarifa y precio de forma compacta.
+  /// Chip de información con icono y texto en blanco semitransparente.
   Widget _infoChip(IconData icon, String text) {
     return Row(
       children: [
-        Icon(icon, size: 14, color: AppTheme.textMedium),
+        Icon(icon, size: 14, color: Colors.white70),
         const SizedBox(width: 4),
-        Text(text, style: const TextStyle(color: AppTheme.textMedium, fontSize: 13)),
+        Text(text, style: const TextStyle(color: Colors.white70, fontSize: 13)),
       ],
     );
   }
 }
 
-/// Bottom sheet para editar una reserva existente en 3 pasos:
+/// Bottom sheet para editar una reserva existente en 3 pasos.
+/// Tiene el mismo degradado verde que el resto de la app.
 /// Paso 0: Elegir pista y duración
 /// Paso 1: Elegir fecha y hora
 /// Paso 2: Confirmar los cambios
 class _EditarReservaBottomSheet extends StatefulWidget {
-  final dynamic reserva;     // Datos de la reserva a editar
-  final String dniSocio;     // DNI del socio para la llamada a la API
+  final dynamic reserva;            // Datos de la reserva a editar
+  final String dniSocio;            // DNI del socio para la API
   final VoidCallback onActualizada; // Callback cuando la reserva se actualiza
 
   const _EditarReservaBottomSheet({
@@ -474,7 +471,7 @@ class _EditarReservaBottomSheet extends StatefulWidget {
 }
 
 class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
-  // Listas de instalaciones y tarifas cargadas de la API
+  // Listas cargadas de la API
   List<dynamic> _instalaciones = [];
   List<dynamic> _tarifas = [];
 
@@ -500,7 +497,7 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
   }
 
   /// Carga instalaciones y tarifas desde la API.
-  /// Preselecciona automáticamente las que tenía la reserva original.
+  /// Preselecciona las de la reserva original.
   Future<void> _cargarDatos() async {
     try {
       final inst = await ApiService.getInstalaciones(estado: 'ACTIVA');
@@ -508,12 +505,12 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
       setState(() {
         _instalaciones = inst;
         _tarifas = tar;
-        // Preseleccionamos la instalación de la reserva original
+        // Preseleccionamos instalación de la reserva original
         _instalacionSeleccionada = inst.firstWhere(
           (i) => i['idInstalacion'] == widget.reserva['idInstalacion'],
           orElse: () => inst.isNotEmpty ? inst[0] : null,
         );
-        // Preseleccionamos la tarifa de la reserva original por nombre
+        // Preseleccionamos tarifa de la reserva original por nombre
         _tarifaSeleccionada = tar.firstWhere(
           (t) => t['nombre'] == widget.reserva['tarifa'],
           orElse: () => tar.isNotEmpty ? tar[0] : null,
@@ -525,12 +522,12 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
     }
   }
 
-  /// Carga las horas disponibles para la instalación, tarifa y fecha seleccionadas.
+  /// Carga las horas disponibles para la selección actual.
   Future<void> _cargarHoras() async {
     if (_instalacionSeleccionada == null || _tarifaSeleccionada == null) return;
     setState(() {
       _loadingHoras = true;
-      _horaSeleccionada = null; // Reseteamos la hora al cambiar fecha/pista/tarifa
+      _horaSeleccionada = null;
       _horas = [];
     });
     try {
@@ -550,12 +547,10 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
   }
 
   /// Envía los nuevos datos a la API para reagendar la reserva.
-  /// Cierra el bottom sheet y llama a [onActualizada] si tiene éxito.
   Future<void> _guardar() async {
     if (_instalacionSeleccionada == null || _tarifaSeleccionada == null || _horaSeleccionada == null) return;
     setState(() => _guardando = true);
 
-    // Formateamos la fecha y hora para la API
     final fecha = DateFormat('yyyy-MM-dd').format(_fechaSeleccionada);
     final fechaHora = '$fecha $_horaSeleccionada:00';
 
@@ -567,9 +562,9 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
         'fechaHora': fechaHora,
       });
       if (mounted) {
-        Navigator.pop(context); // Cerramos el bottom sheet
+        Navigator.pop(context);
         if (result['success'] == true) {
-          widget.onActualizada(); // Notificamos el éxito
+          widget.onActualizada();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(result['message'] ?? 'Error al actualizar'), backgroundColor: AppTheme.danger),
@@ -591,35 +586,41 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      // Altura del 75% de la pantalla para el bottom sheet
-      height: MediaQuery.of(context).size.height * 0.75,
+      height: MediaQuery.of(context).size.height * 0.85,
+      // Degradado verde igual que el resto de la app
       decoration: const BoxDecoration(
-        color: Colors.white,
+        gradient: LinearGradient(
+          colors: [Color(0xFF2D6A4F), Color(0xFF1B4332), Color(0xFF0D2B1E)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         children: [
-          // Handle visual del bottom sheet (línea gris arriba)
+          // Handle visual semitransparente
           Padding(
             padding: const EdgeInsets.only(top: 12),
             child: Center(
               child: Container(
                 width: 40,
                 height: 4,
-                decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(2)),
               ),
             ),
           ),
-          // Cabecera con botón de retroceso y título del paso actual
+          // Cabecera con botón de retroceso y título del paso
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             child: Row(
               children: [
-                // Botón de retroceso (visible desde el paso 1 en adelante)
+                // Botón de retroceso visible desde el paso 1
                 if (_paso > 0)
                   GestureDetector(
                     onTap: () => setState(() => _paso--),
-                    child: const Icon(Icons.arrow_back_ios_rounded, size: 18, color: AppTheme.textDark),
+                    child: const Icon(Icons.arrow_back_ios_rounded, size: 18, color: Colors.white),
                   ),
                 const SizedBox(width: 8),
                 // Título dinámico según el paso actual
@@ -629,16 +630,17 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
                       : _paso == 1
                           ? 'Editar reserva — Fecha'
                           : 'Confirmar cambios',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.textDark),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1),
-          // Contenido del paso actual
+          // Divider semitransparente
+          Divider(color: Colors.white.withValues(alpha: 0.2), height: 1),
+          // Contenido del paso actual con scroll
           Expanded(
             child: _loading
-                ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
+                ? const Center(child: CircularProgressIndicator(color: Colors.white))
                 : SingleChildScrollView(
                     padding: const EdgeInsets.all(20),
                     child: _paso == 0
@@ -653,15 +655,15 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
     );
   }
 
-  /// Paso 0: Selector de pista y duración/tarifa.
+  /// Paso 0: Selector de pista y duración/tarifa con estilo verde.
   Widget _buildPaso0() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Elige una pista',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppTheme.textDark)),
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
         const SizedBox(height: 12),
-        // Lista de instalaciones disponibles
+        // Lista de instalaciones — blanco si seleccionada, semitransparente si no
         ..._instalaciones.map((inst) => GestureDetector(
               onTap: () => setState(() => _instalacionSeleccionada = inst),
               child: AnimatedContainer(
@@ -669,37 +671,45 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
                 margin: const EdgeInsets.only(bottom: 10),
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  // Resaltado verde si está seleccionada
                   color: _instalacionSeleccionada?['idInstalacion'] == inst['idInstalacion']
-                      ? AppTheme.primary.withValues(alpha: 0.08)
-                      : Colors.white,
+                      ? Colors.white
+                      : Colors.white.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
                     color: _instalacionSeleccionada?['idInstalacion'] == inst['idInstalacion']
-                        ? AppTheme.primary
-                        : Colors.grey.shade200,
+                        ? Colors.white
+                        : Colors.white.withValues(alpha: 0.2),
                     width: _instalacionSeleccionada?['idInstalacion'] == inst['idInstalacion'] ? 2 : 1,
                   ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.sports_tennis_rounded, color: AppTheme.primary, size: 20),
+                    Icon(Icons.sports_tennis_rounded,
+                        color: _instalacionSeleccionada?['idInstalacion'] == inst['idInstalacion']
+                            ? const Color(0xFF1B4332)
+                            : Colors.white70,
+                        size: 20),
                     const SizedBox(width: 12),
                     Expanded(
-                        child: Text(inst['nombre'] ?? '',
-                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14))),
-                    // Check de selección
+                      child: Text(inst['nombre'] ?? '',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: _instalacionSeleccionada?['idInstalacion'] == inst['idInstalacion']
+                                  ? const Color(0xFF1B4332)
+                                  : Colors.white)),
+                    ),
                     if (_instalacionSeleccionada?['idInstalacion'] == inst['idInstalacion'])
-                      const Icon(Icons.check_circle_rounded, color: AppTheme.primary),
+                      const Icon(Icons.check_circle_rounded, color: Color(0xFF1B4332)),
                   ],
                 ),
               ),
             )),
         const SizedBox(height: 20),
         const Text('Elige la duración',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppTheme.textDark)),
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
         const SizedBox(height: 12),
-        // Lista de tarifas disponibles
+        // Lista de tarifas — mismo estilo que las instalaciones
         ..._tarifas.map((tar) => GestureDetector(
               onTap: () => setState(() => _tarifaSeleccionada = tar),
               child: AnimatedContainer(
@@ -708,86 +718,127 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: _tarifaSeleccionada?['idTarifa'] == tar['idTarifa']
-                      ? AppTheme.primary.withValues(alpha: 0.08)
-                      : Colors.white,
+                      ? Colors.white
+                      : Colors.white.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: _tarifaSeleccionada?['idTarifa'] == tar['idTarifa'] ? AppTheme.primary : Colors.grey.shade200,
+                    color: _tarifaSeleccionada?['idTarifa'] == tar['idTarifa']
+                        ? Colors.white
+                        : Colors.white.withValues(alpha: 0.2),
                     width: _tarifaSeleccionada?['idTarifa'] == tar['idTarifa'] ? 2 : 1,
                   ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.timer_rounded, color: AppTheme.primary, size: 20),
+                    Icon(Icons.timer_rounded,
+                        color: _tarifaSeleccionada?['idTarifa'] == tar['idTarifa']
+                            ? const Color(0xFF1B4332)
+                            : Colors.white70,
+                        size: 20),
                     const SizedBox(width: 12),
                     Expanded(
-                        child: Text('${tar['nombre']}',
-                            style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14))),
-                    // Precio de la tarifa
+                      child: Text('${tar['nombre']}',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 14,
+                              color: _tarifaSeleccionada?['idTarifa'] == tar['idTarifa']
+                                  ? const Color(0xFF1B4332)
+                                  : Colors.white)),
+                    ),
                     Text('€${tar['precio']}',
-                        style: const TextStyle(fontWeight: FontWeight.w700, color: AppTheme.primary)),
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: _tarifaSeleccionada?['idTarifa'] == tar['idTarifa']
+                                ? const Color(0xFF1B4332)
+                                : Colors.white,
+                            fontSize: 15)),
                     if (_tarifaSeleccionada?['idTarifa'] == tar['idTarifa']) ...[
                       const SizedBox(width: 8),
-                      const Icon(Icons.check_circle_rounded, color: AppTheme.primary, size: 20),
+                      const Icon(Icons.check_circle_rounded, color: Color(0xFF1B4332), size: 20),
                     ],
                   ],
                 ),
               ),
             )),
         const SizedBox(height: 24),
-        // Botón continuar — solo activo si hay pista y tarifa seleccionadas
+        // Botón continuar en blanco con texto verde
         ElevatedButton(
           onPressed: (_instalacionSeleccionada != null && _tarifaSeleccionada != null)
               ? () {
                   setState(() => _paso = 1);
-                  _cargarHoras(); // Cargamos horas para la nueva selección
+                  _cargarHoras();
                 }
               : null,
-          child: const Text('Continuar'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.white,
+            foregroundColor: const Color(0xFF1B4332),
+            minimumSize: const Size(double.infinity, 52),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            elevation: 0,
+          ),
+          child: const Text('Continuar', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
         ),
       ],
     );
   }
 
-  /// Paso 1: Selector de fecha con calendario y selector de hora disponible.
+  /// Paso 1: Calendario y selector de hora con estilo verde.
   Widget _buildPaso1() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Selecciona la fecha',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppTheme.textDark)),
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
         const SizedBox(height: 12),
-        // Calendario para elegir el día
+        // Calendario con fondo semitransparente
         Container(
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(16),
+          ),
           child: TableCalendar(
-            // Solo permitimos fechas desde mañana en adelante
             firstDay: DateTime.now().add(const Duration(days: 1)),
             lastDay: DateTime.now().add(const Duration(days: 60)),
             focusedDay: _fechaSeleccionada,
             selectedDayPredicate: (day) => isSameDay(day, _fechaSeleccionada),
             onDaySelected: (selected, focused) {
               setState(() => _fechaSeleccionada = selected);
-              _cargarHoras(); // Recargamos horas al cambiar fecha
+              _cargarHoras();
             },
             calendarStyle: CalendarStyle(
-              selectedDecoration: const BoxDecoration(color: AppTheme.primary, shape: BoxShape.circle),
-              todayDecoration:
-                  BoxDecoration(color: AppTheme.primary.withValues(alpha: 0.3), shape: BoxShape.circle),
+              // Día seleccionado en blanco con texto verde
+              selectedDecoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+              selectedTextStyle: const TextStyle(color: Color(0xFF1B4332), fontWeight: FontWeight.w700),
+              todayDecoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.3), shape: BoxShape.circle),
+              todayTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+              defaultTextStyle: const TextStyle(color: Colors.white),
+              weekendTextStyle: const TextStyle(color: Colors.white70),
+              outsideTextStyle: const TextStyle(color: Colors.white38),
             ),
-            headerStyle: const HeaderStyle(formatButtonVisible: false, titleCentered: true),
+            headerStyle: const HeaderStyle(
+              formatButtonVisible: false,
+              titleCentered: true,
+              titleTextStyle: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16),
+              leftChevronIcon: Icon(Icons.chevron_left, color: Colors.white),
+              rightChevronIcon: Icon(Icons.chevron_right, color: Colors.white),
+            ),
+            daysOfWeekStyle: const DaysOfWeekStyle(
+              weekdayStyle: TextStyle(color: Colors.white70, fontSize: 12),
+              weekendStyle: TextStyle(color: Colors.white70, fontSize: 12),
+            ),
             locale: 'es_ES',
           ),
         ),
         const SizedBox(height: 20),
         const Text('Elige una hora',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppTheme.textDark)),
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
         const SizedBox(height: 12),
-        // Grid de horas disponibles
+        // Grid de horas con estilo semitransparente
         if (_loadingHoras)
-          const Center(child: CircularProgressIndicator(color: AppTheme.primary))
+          const Center(child: CircularProgressIndicator(color: Colors.white))
         else if (_horas.isEmpty)
-          const Center(child: Text('No hay horas disponibles', style: TextStyle(color: AppTheme.textMedium)))
+          const Center(child: Text('No hay horas disponibles', style: TextStyle(color: Colors.white70)))
         else
           Wrap(
             spacing: 10,
@@ -802,99 +853,120 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   decoration: BoxDecoration(
-                    // Gris si no disponible, verde si seleccionada, blanco si disponible
+                    // Blanco si seleccionada, semitransparente si disponible, casi invisible si ocupada
                     color: !disponible
-                        ? Colors.grey.shade100
+                        ? Colors.white.withValues(alpha: 0.05)
                         : selected
-                            ? AppTheme.primary
-                            : Colors.white,
+                            ? Colors.white
+                            : Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: selected ? AppTheme.primary : Colors.grey.shade200),
+                    border: Border.all(
+                        color: selected ? Colors.white : Colors.white.withValues(alpha: 0.3)),
                   ),
                   child: Text(hora,
                       style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: !disponible
-                              ? AppTheme.textLight
+                              ? Colors.white30
                               : selected
-                                  ? Colors.white
-                                  : AppTheme.textDark)),
+                                  ? const Color(0xFF1B4332)
+                                  : Colors.white)),
                 ),
               );
             }).toList(),
           ),
         const SizedBox(height: 24),
-        // Botón continuar — solo activo si hay hora seleccionada
+        // Botón continuar en blanco con texto verde
         ElevatedButton(
           onPressed: _horaSeleccionada != null ? () => setState(() => _paso = 2) : null,
-          child: const Text('Continuar'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.white,
+            foregroundColor: const Color(0xFF1B4332),
+            minimumSize: const Size(double.infinity, 52),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            elevation: 0,
+          ),
+          child: const Text('Continuar', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
         ),
       ],
     );
   }
 
-  /// Paso 2: Resumen de los cambios antes de confirmar.
+  /// Paso 2: Resumen de los cambios con estilo semitransparente.
   Widget _buildPaso2() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Confirma los cambios',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppTheme.textDark)),
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
         const SizedBox(height: 16),
-        // Tarjeta resumen con todos los detalles de la nueva reserva
+        // Tarjeta resumen semitransparente
         Container(
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+          ),
           child: Column(
             children: [
               _resumenRow(Icons.sports_tennis_rounded, 'Pista', _instalacionSeleccionada?['nombre'] ?? ''),
-              const Divider(height: 24),
+              Divider(color: Colors.white.withValues(alpha: 0.2), height: 24),
               _resumenRow(Icons.timer_rounded, 'Duración', '${_tarifaSeleccionada?['duracionMinutos']} min'),
-              const Divider(height: 24),
+              Divider(color: Colors.white.withValues(alpha: 0.2), height: 24),
               _resumenRow(Icons.calendar_today_rounded, 'Fecha',
                   DateFormat('EEEE d MMMM', 'es').format(_fechaSeleccionada)),
-              const Divider(height: 24),
+              Divider(color: Colors.white.withValues(alpha: 0.2), height: 24),
               _resumenRow(Icons.access_time_rounded, 'Hora', _horaSeleccionada ?? ''),
-              const Divider(height: 24),
+              Divider(color: Colors.white.withValues(alpha: 0.2), height: 24),
               _resumenRow(Icons.euro_rounded, 'Precio', '€${_tarifaSeleccionada?['precio']}'),
             ],
           ),
         ),
         const SizedBox(height: 24),
-        // Botón de confirmación final
+        // Botón confirmar en blanco con texto verde
         ElevatedButton(
           onPressed: _guardando ? null : _guardar,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.white,
+            foregroundColor: const Color(0xFF1B4332),
+            minimumSize: const Size(double.infinity, 52),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            elevation: 0,
+          ),
           child: _guardando
               ? const SizedBox(
                   height: 20,
                   width: 20,
-                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-              : const Text('Confirmar cambios'),
+                  child: CircularProgressIndicator(color: Color(0xFF1B4332), strokeWidth: 2))
+              : const Text('Confirmar cambios',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
         ),
       ],
     );
   }
 
-  /// Fila del resumen con icono, etiqueta descriptiva y valor.
+  /// Fila del resumen con icono, etiqueta y valor en blanco.
   Widget _resumenRow(IconData icon, String label, String value) {
     return Row(
       children: [
-        Icon(icon, color: AppTheme.primary, size: 20),
+        Icon(icon, color: Colors.white70, size: 20),
         const SizedBox(width: 12),
-        Text(label, style: const TextStyle(color: AppTheme.textMedium, fontSize: 14)),
+        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 14)),
         const Spacer(),
-        Text(value, style: const TextStyle(color: AppTheme.textDark, fontWeight: FontWeight.w600, fontSize: 14)),
+        Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
       ],
     );
   }
 }
 
 /// Bottom sheet para dejar una reseña tras una partida.
-/// Permite elegir una puntuación de 1 a 5 estrellas y añadir un comentario opcional.
+/// Tiene el mismo degradado verde que el resto de la app.
+/// Permite elegir una puntuación de 1 a 5 estrellas y añadir comentario.
 class _ResenaBottomSheet extends StatefulWidget {
   final String idInstalacion;      // ID de la pista a reseñar
-  final String nombreInstalacion;  // Nombre de la pista (para mostrar al usuario)
+  final String nombreInstalacion;  // Nombre de la pista
   final String nombreAutor;        // Nombre completo del socio
   final String dniSocio;           // DNI del socio para la API
   final VoidCallback onEnviada;    // Callback cuando la reseña se envía con éxito
@@ -935,9 +1007,9 @@ class _ResenaBottomSheetState extends State<_ResenaBottomSheet> {
         'dniSocio': widget.dniSocio,
       });
       if (mounted) {
-        Navigator.pop(context); // Cerramos el bottom sheet
+        Navigator.pop(context);
         if (result['success'] == true) {
-          widget.onEnviada(); // Notificamos el éxito
+          widget.onEnviada();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -961,11 +1033,16 @@ class _ResenaBottomSheetState extends State<_ResenaBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
+      // Degradado verde igual que el resto de la app
       decoration: const BoxDecoration(
-        color: Colors.white,
+        gradient: LinearGradient(
+          colors: [Color(0xFF2D6A4F), Color(0xFF1B4332), Color(0xFF0D2B1E)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      // Añadimos el padding del teclado para que no tape el formulario
+      // Padding extra para que el teclado no tape el formulario
       padding: EdgeInsets.only(
         left: 24,
         right: 24,
@@ -976,26 +1053,28 @@ class _ResenaBottomSheetState extends State<_ResenaBottomSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Handle visual del bottom sheet
+          // Handle visual semitransparente
           Center(
             child: Container(
               width: 40,
               height: 4,
-              decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+              decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(2)),
             ),
           ),
           const SizedBox(height: 20),
+          // Título y nombre de la pista en blanco
           const Text('¿Cómo fue tu partida?',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppTheme.textDark)),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
           const SizedBox(height: 4),
-          // Nombre de la pista reseñada
           Text(widget.nombreInstalacion,
-              style: const TextStyle(color: AppTheme.textMedium, fontSize: 14)),
+              style: const TextStyle(color: Colors.white70, fontSize: 14)),
           const SizedBox(height: 24),
           const Text('Puntuación',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textDark)),
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
           const SizedBox(height: 10),
-          // Selector de estrellas (1 a 5)
+          // Selector de estrellas doradas (1 a 5)
           Row(
             children: List.generate(5, (i) {
               final estrella = i + 1;
@@ -1014,38 +1093,50 @@ class _ResenaBottomSheetState extends State<_ResenaBottomSheet> {
           ),
           const SizedBox(height: 20),
           const Text('Comentario (opcional)',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textDark)),
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
           const SizedBox(height: 10),
-          // Campo de texto para el comentario (máximo 500 caracteres)
+          // Campo de texto con estilo adaptado al fondo verde
           TextField(
             controller: _comentarioCtrl,
             maxLines: 3,
             maxLength: 500,
+            style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
               hintText: 'Cuéntanos tu experiencia...',
+              hintStyle: const TextStyle(color: Colors.white54),
               filled: true,
-              fillColor: AppTheme.background,
+              fillColor: Colors.white.withValues(alpha: 0.12),
+              counterStyle: const TextStyle(color: Colors.white54),
               border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade200)),
+                  borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2))),
               enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade200)),
+                  borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2))),
+              // Borde blanco sólido al enfocar
               focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppTheme.primary, width: 2)),
+                  borderSide: const BorderSide(color: Colors.white, width: 2)),
             ),
           ),
           const SizedBox(height: 16),
-          // Botón de envío con indicador de carga
+          // Botón enviar en blanco con texto verde
           ElevatedButton(
             onPressed: _enviando ? null : _enviar,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xFF1B4332),
+              minimumSize: const Size(double.infinity, 52),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              elevation: 0,
+            ),
             child: _enviando
                 ? const SizedBox(
                     height: 20,
                     width: 20,
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : const Text('Enviar reseña'),
+                    child: CircularProgressIndicator(color: Color(0xFF1B4332), strokeWidth: 2))
+                : const Text('Enviar reseña',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
           ),
         ],
       ),

@@ -39,7 +39,8 @@ class _DetallePistaScreenState extends State<DetallePistaScreen> {
         duracion: 60,
       );
       setState(() {
-        _horas = (res['horas'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+        _horas = (res['horas'] as List<dynamic>? ?? [])
+            .cast<Map<String, dynamic>>();
         _loadingHoras = false;
       });
     } catch (_) {
@@ -65,17 +66,24 @@ class _DetallePistaScreenState extends State<DetallePistaScreen> {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                   child: ElevatedButton(
-                    onPressed: () => context.push('/reservar', extra: widget.instalacion),
+                    onPressed: () => context
+                        .push('/reservar', extra: widget.instalacion)
+                        .then((_) => _cargarHoras()),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: const Color(0xFF1B4332),
                       minimumSize: const Size(double.infinity, 52),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                       elevation: 0,
                     ),
                     child: const Text(
                       'Reservar esta pista',
-                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
                     ),
                   ),
                 ),
@@ -85,11 +93,7 @@ class _DetallePistaScreenState extends State<DetallePistaScreen> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFF52B788),
-              Color(0xFF2D6A4F),
-              Color(0xFF0D2B1E),
-            ],
+            colors: [Color(0xFF52B788), Color(0xFF2D6A4F), Color(0xFF0D2B1E)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -109,15 +113,24 @@ class _DetallePistaScreenState extends State<DetallePistaScreen> {
                         ? CachedNetworkImage(
                             imageUrl: imagenUrl,
                             fit: BoxFit.cover,
-                            placeholder: (context, url) => Container(color: const Color(0xFF1B4332)),
+                            placeholder: (context, url) =>
+                                Container(color: const Color(0xFF1B4332)),
                             errorWidget: (context, url, error) => Container(
                               color: const Color(0xFF1B4332),
-                              child: const Icon(Icons.sports_tennis_rounded, size: 80, color: Colors.white54),
+                              child: const Icon(
+                                Icons.sports_tennis_rounded,
+                                size: 80,
+                                color: Colors.white54,
+                              ),
                             ),
                           )
                         : Container(
                             color: const Color(0xFF1B4332),
-                            child: const Icon(Icons.sports_tennis_rounded, size: 80, color: Colors.white54),
+                            child: const Icon(
+                              Icons.sports_tennis_rounded,
+                              size: 80,
+                              color: Colors.white54,
+                            ),
                           ),
                     Container(
                       decoration: const BoxDecoration(
@@ -135,14 +148,30 @@ class _DetallePistaScreenState extends State<DetallePistaScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(nombre,
-                              style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700)),
+                          Text(
+                            nombre,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                           if (ubicacion != null)
                             Row(
                               children: [
-                                const Icon(Icons.location_on_rounded, size: 13, color: Colors.white70),
+                                const Icon(
+                                  Icons.location_on_rounded,
+                                  size: 13,
+                                  color: Colors.white70,
+                                ),
                                 const SizedBox(width: 3),
-                                Text(ubicacion, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                                Text(
+                                  ubicacion,
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 13,
+                                  ),
+                                ),
                               ],
                             ),
                         ],
@@ -163,20 +192,31 @@ class _DetallePistaScreenState extends State<DetallePistaScreen> {
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          child: Text(tipo,
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
+                          child: Text(
+                            tipo,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
                         ),
                         const Spacer(),
                         if (!_loadingHoras)
                           Text(
                             '$disponibles horas libres hoy',
                             style: TextStyle(
-                              color: disponibles > 0 ? Colors.white : Colors.redAccent,
+                              color: disponibles > 0
+                                  ? Colors.white
+                                  : Colors.redAccent,
                               fontWeight: FontWeight.w600,
                               fontSize: 13,
                             ),
@@ -216,11 +256,16 @@ class _DetallePistaScreenState extends State<DetallePistaScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  DateFormat('EEE', 'es').format(dia).toUpperCase(),
+                                  DateFormat(
+                                    'EEE',
+                                    'es',
+                                  ).format(dia).toUpperCase(),
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w600,
-                                    color: selected ? AppTheme.primary : Colors.white70,
+                                    color: selected
+                                        ? AppTheme.primary
+                                        : Colors.white70,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
@@ -229,7 +274,9 @@ class _DetallePistaScreenState extends State<DetallePistaScreen> {
                                   style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w700,
-                                    color: selected ? AppTheme.primary : Colors.white,
+                                    color: selected
+                                        ? AppTheme.primary
+                                        : Colors.white,
                                   ),
                                 ),
                               ],
@@ -248,15 +295,27 @@ class _DetallePistaScreenState extends State<DetallePistaScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Horarios disponibles',
-                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
+                        const Text(
+                          'Horarios disponibles',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
                         const SizedBox(height: 16),
                         if (_loadingHoras)
-                          const Center(child: CircularProgressIndicator(color: Colors.white))
+                          const Center(
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                            ),
+                          )
                         else if (_horas.isEmpty)
                           const Center(
-                            child: Text('No hay horarios disponibles para este día',
-                                style: TextStyle(color: Colors.white70)),
+                            child: Text(
+                              'No hay horarios disponibles para este día',
+                              style: TextStyle(color: Colors.white70),
+                            ),
                           )
                         else
                           Wrap(
@@ -265,7 +324,10 @@ class _DetallePistaScreenState extends State<DetallePistaScreen> {
                             children: _horas.map((h) {
                               final disponible = h['disponible'] as bool;
                               return Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 8,
+                                ),
                                 decoration: BoxDecoration(
                                   color: disponible
                                       ? Colors.white.withValues(alpha: 0.2)
@@ -274,7 +336,9 @@ class _DetallePistaScreenState extends State<DetallePistaScreen> {
                                   border: Border.all(
                                     color: disponible
                                         ? Colors.white.withValues(alpha: 0.5)
-                                        : Colors.redAccent.withValues(alpha: 0.4),
+                                        : Colors.redAccent.withValues(
+                                            alpha: 0.4,
+                                          ),
                                   ),
                                 ),
                                 child: Text(
@@ -282,10 +346,14 @@ class _DetallePistaScreenState extends State<DetallePistaScreen> {
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
-                                    color: disponible ? Colors.white : Colors.redAccent,
+                                    color: disponible
+                                        ? Colors.white
+                                        : Colors.redAccent,
                                   ),
                                 ),
-                              ).animate().fadeIn(delay: const Duration(milliseconds: 50));
+                              ).animate().fadeIn(
+                                delay: const Duration(milliseconds: 50),
+                              );
                             }).toList(),
                           ),
                       ],
