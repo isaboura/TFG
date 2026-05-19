@@ -156,11 +156,11 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
                             ),
                             errorBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
-                              borderSide: const BorderSide(color: Colors.redAccent),
+                              borderSide: const BorderSide(color: Colors.white),
                             ),
                             focusedErrorBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
-                              borderSide: const BorderSide(color: Colors.redAccent, width: 2),
+                              borderSide: const BorderSide(color: Colors.white, width: 2),
                             ),
                             errorStyle: const TextStyle(color: Colors.white),
                           ),
@@ -206,11 +206,11 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
                             ),
                             errorBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
-                              borderSide: const BorderSide(color: Colors.redAccent),
+                              borderSide: const BorderSide(color: Colors.white),
                             ),
                             focusedErrorBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
-                              borderSide: const BorderSide(color: Colors.redAccent, width: 2),
+                              borderSide: const BorderSide(color: Colors.white, width: 2),
                             ),
                             errorStyle: const TextStyle(color: Colors.white),
                           ),

@@ -134,13 +134,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                 errorBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(14),
                                   borderSide: const BorderSide(
-                                    color: Colors.redAccent,
+                                    color: Colors.white,
                                   ),
                                 ),
                                 focusedErrorBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(14),
                                   borderSide: const BorderSide(
-                                    color: Colors.redAccent,
+                                    color: Colors.white,
                                     width: 2,
                                   ),
                                 ),
@@ -210,13 +210,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                 errorBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(14),
                                   borderSide: const BorderSide(
-                                    color: Colors.redAccent,
+                                    color: Colors.white,
                                   ),
                                 ),
                                 focusedErrorBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(14),
                                   borderSide: const BorderSide(
-                                    color: Colors.redAccent,
+                                    color: Colors.white,
                                     width: 2,
                                   ),
                                 ),

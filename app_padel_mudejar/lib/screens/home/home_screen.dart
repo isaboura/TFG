@@ -67,90 +67,105 @@ class _HomeScreenState extends State<HomeScreen> {
     final auth = context.watch<AuthProvider>();
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
-      body: RefreshIndicator(
-        onRefresh: _cargar,
-        color: AppTheme.primary,
-        child: CustomScrollView(
-          slivers: [
-            SliverAppBar(
-              expandedHeight: 100,
-              floating: true,
-              snap: true,
-              elevation: 0,
-              backgroundColor: AppTheme.background,
-              surfaceTintColor: Colors.transparent,
-              flexibleSpace: FlexibleSpaceBar(
-                collapseMode: CollapseMode.pin,
-                background: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'Hola, ${auth.nombre} 👋',
-                                style: const TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppTheme.textDark,
-                                ),
-                              ).animate().fadeIn().slideX(begin: -0.2, end: 0),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Club de Pádel Mudéjar',
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ).animate().fadeIn(delay: 100.ms),
-                            ],
-                          ),
-                        ),
-                        CircleAvatar(
-                          radius: 26,
-                          backgroundColor: AppTheme.primary.withOpacity(0.15),
-                          child: Text(
-                            auth.nombre.isNotEmpty ? auth.nombre[0].toUpperCase() : 'U',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: AppTheme.primary,
+      backgroundColor: const Color(0xFF0D2B1E),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF52B788),
+              Color(0xFF2D6A4F),
+              Color(0xFF0D2B1E),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: RefreshIndicator(
+          onRefresh: _cargar,
+          color: Colors.white,
+          child: CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 100,
+                floating: true,
+                snap: true,
+                elevation: 0,
+                backgroundColor: Colors.transparent,
+                surfaceTintColor: Colors.transparent,
+                flexibleSpace: FlexibleSpaceBar(
+                  collapseMode: CollapseMode.pin,
+                  background: SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Hola, ${auth.nombre} 👋',
+                                  style: const TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ).animate().fadeIn().slideX(begin: -0.2, end: 0),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Club de Pádel Mudéjar',
+                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Colors.white70,
+                                  ),
+                                ).animate().fadeIn(delay: 100.ms),
+                              ],
                             ),
                           ),
-                        ).animate().fadeIn(delay: 200.ms).scale(begin: const Offset(0.8, 0.8)),
-                      ],
+                          CircleAvatar(
+                            radius: 26,
+                            backgroundColor: Colors.white.withOpacity(0.2),
+                            child: Text(
+                              auth.nombre.isNotEmpty ? auth.nombre[0].toUpperCase() : 'U',
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ).animate().fadeIn(delay: 200.ms).scale(begin: const Offset(0.8, 0.8)),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
 
-            if (_loading)
-              const SliverFillRemaining(
-                child: Center(child: CircularProgressIndicator(color: AppTheme.primary)),
-              )
-            else
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, i) {
-                      final inst = _instalaciones[i];
-                      final resenas = _resenasPorPista[inst['idInstalacion']];
-                      return _PistaCard(
-                        instalacion: inst,
-                        resenas: resenas,
-                        onTap: () => context.push('/horarios/detalle', extra: inst),
-                        onResenasTap: () => _mostrarResenas(context, inst, resenas),
-                      ).animate().fadeIn(delay: Duration(milliseconds: i * 80)).slideY(begin: 0.1, end: 0);
-                    },
-                    childCount: _instalaciones.length,
+              if (_loading)
+                const SliverFillRemaining(
+                  child: Center(child: CircularProgressIndicator(color: Colors.white)),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, i) {
+                        final inst = _instalaciones[i];
+                        final resenas = _resenasPorPista[inst['idInstalacion']];
+                        return _PistaCard(
+                          instalacion: inst,
+                          resenas: resenas,
+                          onTap: () => context.push('/horarios/detalle', extra: inst),
+                          onResenasTap: () => _mostrarResenas(context, inst, resenas),
+                        ).animate().fadeIn(delay: Duration(milliseconds: i * 80)).slideY(begin: 0.1, end: 0);
+                      },
+                      childCount: _instalaciones.length,
+                    ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -187,7 +202,7 @@ class _PistaCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 4))],
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 4))],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
