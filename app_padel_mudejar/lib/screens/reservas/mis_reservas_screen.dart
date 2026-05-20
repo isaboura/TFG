@@ -66,7 +66,9 @@ class _MisReservasScreenState extends State<MisReservasScreen>
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Cancelar reserva'),
-        content: const Text('¿Estás seguro de que quieres cancelar esta reserva?'),
+        content: const Text(
+          '¿Estás seguro de que quieres cancelar esta reserva?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -74,30 +76,40 @@ class _MisReservasScreenState extends State<MisReservasScreen>
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Sí, cancelar', style: TextStyle(color: AppTheme.danger)),
+            child: const Text(
+              'Sí, cancelar',
+              style: TextStyle(color: AppTheme.danger),
+            ),
           ),
         ],
       ),
     );
     if (confirm != true) return;
 
-    // Llamada a la API para cancelar
+    // Llamada a la API para cancelar la reserva
     final result = await ApiService.cancelarReserva(idReserva);
     if (mounted) {
       if (result['success'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Reserva cancelada'), backgroundColor: AppTheme.primary),
+          const SnackBar(
+            content: Text('Reserva cancelada'),
+            backgroundColor: AppTheme.primary,
+          ),
         );
-        _cargar();
+        _cargar(); // Recargamos la lista tras cancelar
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['mensaje'] ?? 'Error al cancelar'), backgroundColor: AppTheme.danger),
+          SnackBar(
+            content: Text(result['mensaje'] ?? 'Error al cancelar'),
+            backgroundColor: AppTheme.danger,
+          ),
         );
       }
     }
   }
 
   /// Abre el bottom sheet con degradado para editar una reserva.
+  /// Al actualizarse, recarga la lista de reservas.
   void _mostrarEditarReserva(dynamic reserva) {
     final auth = context.read<AuthProvider>();
     showModalBottomSheet(
@@ -110,7 +122,10 @@ class _MisReservasScreenState extends State<MisReservasScreen>
         dniSocio: auth.dni,
         onActualizada: () {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Reserva actualizada'), backgroundColor: AppTheme.primary),
+            const SnackBar(
+              content: Text('Reserva actualizada'),
+              backgroundColor: AppTheme.primary,
+            ),
           );
           _cargar();
         },
@@ -157,12 +172,13 @@ class _MisReservasScreenState extends State<MisReservasScreen>
           ),
         ),
         child: _loading
-            ? const Center(child: CircularProgressIndicator(color: Colors.white))
+            ? const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              )
             : NestedScrollView(
                 // NestedScrollView permite que el SliverAppBar se oculte al hacer scroll
                 headerSliverBuilder: (context, innerBoxIsScrolled) => [
                   SliverAppBar(
-                    // floating + snap: aparece/desaparece con animación al hacer scroll
                     floating: true,
                     snap: true,
                     backgroundColor: Colors.transparent,
@@ -171,9 +187,13 @@ class _MisReservasScreenState extends State<MisReservasScreen>
                     // Título en blanco
                     title: const Text(
                       'Mis Reservas',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.white),
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
                     ),
-                    // TabBar con pestañas en blanco
+                    // TabBar con pestañas Próximas e Historial
                     bottom: TabBar(
                       controller: _tabController,
                       labelColor: Colors.white,
@@ -182,7 +202,9 @@ class _MisReservasScreenState extends State<MisReservasScreen>
                       indicatorWeight: 3,
                       tabs: [
                         Tab(text: 'Próximas (${_datos?['totalFuturas'] ?? 0})'),
-                        Tab(text: 'Historial (${_datos?['totalPasadas'] ?? 0})'),
+                        Tab(
+                          text: 'Historial (${_datos?['totalPasadas'] ?? 0})',
+                        ),
                       ],
                     ),
                   ),
@@ -190,10 +212,16 @@ class _MisReservasScreenState extends State<MisReservasScreen>
                 body: TabBarView(
                   controller: _tabController,
                   children: [
-                    // Pestaña de reservas próximas (editar/cancelar)
-                    _buildLista((_datos?['futuras'] as List<dynamic>? ?? []), futuras: true),
-                    // Pestaña de historial (dejar reseña)
-                    _buildLista((_datos?['pasadas'] as List<dynamic>? ?? []), futuras: false),
+                    // Pestaña de reservas próximas con botones de editar/cancelar
+                    _buildLista(
+                      (_datos?['futuras'] as List<dynamic>? ?? []),
+                      futuras: true,
+                    ),
+                    // Pestaña de historial con botón de reseña
+                    _buildLista(
+                      (_datos?['pasadas'] as List<dynamic>? ?? []),
+                      futuras: false,
+                    ),
                   ],
                 ),
               ),
@@ -204,7 +232,7 @@ class _MisReservasScreenState extends State<MisReservasScreen>
   /// Construye la lista de tarjetas de reserva para cada pestaña.
   /// [futuras] determina si mostramos botones de editar/cancelar o de reseña.
   Widget _buildLista(List<dynamic> reservas, {required bool futuras}) {
-    // Estado vacío con icono y mensaje descriptivo en blanco
+    // Estado vacío con icono y mensaje descriptivo
     if (reservas.isEmpty) {
       return Center(
         child: Column(
@@ -235,14 +263,17 @@ class _MisReservasScreenState extends State<MisReservasScreen>
         itemBuilder: (context, i) {
           final r = reservas[i];
           return _ReservaCard(
-            reserva: r,
-            mostrarCancelar: futuras && r['estado'] == 'CONFIRMADA',
-            mostrarEditar: futuras && r['estado'] == 'CONFIRMADA',
-            mostrarResena: !futuras && r['estado'] == 'CONFIRMADA',
-            onCancelar: () => _cancelar(r['idReserva']),
-            onEditar: () => _mostrarEditarReserva(r),
-            onResena: () => _mostrarBottomSheetResena(r),
-          ).animate().fadeIn(delay: Duration(milliseconds: i * 80)).slideY(begin: 0.1, end: 0);
+                reserva: r,
+                mostrarCancelar: futuras && r['estado'] == 'CONFIRMADA',
+                mostrarEditar: futuras && r['estado'] == 'CONFIRMADA',
+                mostrarResena: !futuras && r['estado'] == 'CONFIRMADA',
+                onCancelar: () => _cancelar(r['idReserva']),
+                onEditar: () => _mostrarEditarReserva(r),
+                onResena: () => _mostrarBottomSheetResena(r),
+              )
+              .animate()
+              .fadeIn(delay: Duration(milliseconds: i * 80))
+              .slideY(begin: 0.1, end: 0);
         },
       ),
     );
@@ -271,7 +302,7 @@ class _ReservaCard extends StatelessWidget {
     required this.onResena,
   });
 
-  /// Color del badge según el estado: verde=confirmada, rojo=cancelada, gris=otros.
+  /// Color del texto del badge según el estado de la reserva.
   Color _estadoColor(String estado) {
     switch (estado) {
       case 'CONFIRMADA':
@@ -283,7 +314,7 @@ class _ReservaCard extends StatelessWidget {
     }
   }
 
-  /// Color de fondo del badge de estado
+  /// Color de fondo del badge de estado.
   Color _estadoBgColor(String estado) {
     switch (estado) {
       case 'CONFIRMADA':
@@ -315,40 +346,55 @@ class _ReservaCard extends StatelessWidget {
           // --- Cabecera: icono + nombre de pista + badge de estado ---
           Row(
             children: [
-              // Icono de pista con fondo semitransparente blanco
+              // Icono de pista con fondo semitransparente
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.sports_tennis_rounded, color: Colors.white, size: 20),
+                child: const Icon(
+                  Icons.sports_tennis_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               // Nombre de la instalación en blanco
               Expanded(
                 child: Text(
                   reserva['instalacion'] ?? '',
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.white),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: Colors.white,
+                  ),
                 ),
               ),
-              // Badge de estado adaptado al fondo verde
+              // Badge de estado con color según el estado
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: _estadoBgColor(estado),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   estado,
-                  style: TextStyle(color: _estadoColor(estado), fontSize: 11, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    color: _estadoColor(estado),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
 
-          // --- Información: fecha, tarifa y precio en blanco semitransparente ---
+          // --- Información: fecha, tarifa y precio ---
           Row(
             children: [
               _infoChip(Icons.calendar_today_rounded, fechaStr),
@@ -359,7 +405,7 @@ class _ReservaCard extends StatelessWidget {
           const SizedBox(height: 8),
           _infoChip(Icons.euro_rounded, '€${reserva['precio'] ?? '0'}'),
 
-          // --- Botones de Editar y Cancelar (solo reservas futuras confirmadas) ---
+          // --- Botones Editar y Cancelar (reservas futuras confirmadas) ---
           if (mostrarEditar || mostrarCancelar) ...[
             const SizedBox(height: 12),
             Divider(color: Colors.white.withValues(alpha: 0.2), height: 1),
@@ -373,21 +419,31 @@ class _ReservaCard extends StatelessWidget {
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Icono de editar en azul claro para contraste
-                          Icon(Icons.edit_rounded, color: Colors.white, size: 16),
+                          Icon(
+                            Icons.edit_rounded,
+                            color: Colors.white,
+                            size: 16,
+                          ),
                           SizedBox(width: 6),
-                          Text('Editar',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13)),
+                          Text(
+                            'Editar',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ),
-                // Separador vertical semitransparente entre botones
+                // Separador entre botones
                 if (mostrarEditar && mostrarCancelar)
-                  Container(width: 1, height: 20, color: Colors.white.withValues(alpha: 0.3)),
+                  Container(
+                    width: 1,
+                    height: 20,
+                    color: Colors.white.withValues(alpha: 0.3),
+                  ),
                 if (mostrarCancelar)
                   Expanded(
                     child: GestureDetector(
@@ -395,14 +451,20 @@ class _ReservaCard extends StatelessWidget {
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Icono de cancelar en rojo claro
-                          Icon(Icons.cancel_outlined, color: Colors.white70, size: 16),
+                          Icon(
+                            Icons.cancel_outlined,
+                            color: Colors.white70,
+                            size: 16,
+                          ),
                           SizedBox(width: 6),
-                          Text('Cancelar',
-                              style: TextStyle(
-                                  color: Colors.white70,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13)),
+                          Text(
+                            'Cancelar',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -411,7 +473,7 @@ class _ReservaCard extends StatelessWidget {
             ),
           ],
 
-          // --- Botón de reseña (solo reservas pasadas confirmadas) ---
+          // --- Botón de reseña (reservas pasadas confirmadas) ---
           if (mostrarResena) ...[
             const SizedBox(height: 12),
             Divider(color: Colors.white.withValues(alpha: 0.2), height: 1),
@@ -422,13 +484,20 @@ class _ReservaCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // Estrella dorada para dejar reseña
-                  const Icon(Icons.star_rounded, color: AppTheme.accent, size: 18),
+                  const Icon(
+                    Icons.star_rounded,
+                    color: AppTheme.accent,
+                    size: 18,
+                  ),
                   const SizedBox(width: 6),
-                  Text('Dejar reseña',
-                      style: TextStyle(
-                          color: AppTheme.accent,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13)),
+                  Text(
+                    'Dejar reseña',
+                    style: TextStyle(
+                      color: AppTheme.accent,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -452,12 +521,13 @@ class _ReservaCard extends StatelessWidget {
 
 /// Bottom sheet para editar una reserva existente en 3 pasos.
 /// Tiene el mismo degradado verde que el resto de la app.
-/// Paso 0: Elegir pista y duración
-/// Paso 1: Elegir fecha y hora
-/// Paso 2: Confirmar los cambios
+/// Las tarifas se filtran según el tipo de pista seleccionada:
+/// - Pádel → solo tarifas de pádel y generales
+/// - Tenis → solo tarifas de tenis y generales
+/// - Fútbol → no debería llegar aquí (no reservable desde app)
 class _EditarReservaBottomSheet extends StatefulWidget {
-  final dynamic reserva;            // Datos de la reserva a editar
-  final String dniSocio;            // DNI del socio para la API
+  final dynamic reserva; // Datos de la reserva a editar
+  final String dniSocio; // DNI del socio para la API
   final VoidCallback onActualizada; // Callback cuando la reserva se actualiza
 
   const _EditarReservaBottomSheet({
@@ -467,13 +537,14 @@ class _EditarReservaBottomSheet extends StatefulWidget {
   });
 
   @override
-  State<_EditarReservaBottomSheet> createState() => _EditarReservaBottomSheetState();
+  State<_EditarReservaBottomSheet> createState() =>
+      _EditarReservaBottomSheetState();
 }
 
 class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
-  // Listas cargadas de la API
+  // Listas completas cargadas de la API
   List<dynamic> _instalaciones = [];
-  List<dynamic> _tarifas = [];
+  List<dynamic> _todasLasTarifas = []; // Sin filtrar
 
   // Selecciones del usuario
   Map<String, dynamic>? _instalacionSeleccionada;
@@ -487,13 +558,45 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
   bool _loadingHoras = false;
   bool _guardando = false;
 
-  // Paso actual del flujo (0, 1, 2)
+  // Paso actual del flujo (0=pista/tarifa, 1=fecha/hora, 2=confirmar)
   int _paso = 0;
 
   @override
   void initState() {
     super.initState();
     _cargarDatos();
+  }
+
+  /// Devuelve las tarifas filtradas según el tipo de la instalación seleccionada.
+  /// Igual que en reservar_screen.dart para mantener consistencia.
+  /// - Pádel → tarifas cuyo tipo_pista sea 'Pádel' o vacío (generales)
+  /// - Tenis → tarifas cuyo tipo_pista sea 'Tenis' o vacío (generales)
+  /// - Otros → todas las tarifas
+  List<dynamic> get _tarifasFiltradas {
+    if (_instalacionSeleccionada == null) return _todasLasTarifas; // o _tarifas
+    final tipoPista = (_instalacionSeleccionada!['tipo'] as String? ?? '')
+        .toLowerCase();
+
+    return _todasLasTarifas.where((t) {
+      // o _tarifas
+      final tipoPistaApi = (t['tipo_pista'] as String? ?? '').toLowerCase();
+
+      if (tipoPista.contains('pádel') || tipoPista.contains('padel')) {
+        // Pádel: solo generales (null), excluimos tenis y fútbol
+        return tipoPistaApi.isEmpty;
+      }
+      if (tipoPista.contains('tenis')) {
+        // Tenis: las propias de tenis + las generales
+        return tipoPistaApi.isEmpty || tipoPistaApi.contains('tenis');
+      }
+      if (tipoPista.contains('fútbol') || tipoPista.contains('futbol')) {
+        // Fútbol: solo las de fútbol sala
+        return tipoPistaApi.contains('fútbol') ||
+            tipoPistaApi.contains('futbol');
+      }
+      // Cualquier otro tipo: todas
+      return true;
+    }).toList();
   }
 
   /// Carga instalaciones y tarifas desde la API.
@@ -504,13 +607,13 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
       final tar = await ApiService.getTarifas();
       setState(() {
         _instalaciones = inst;
-        _tarifas = tar;
-        // Preseleccionamos instalación de la reserva original
+        _todasLasTarifas = tar;
+        // Preseleccionamos la instalación de la reserva original
         _instalacionSeleccionada = inst.firstWhere(
           (i) => i['idInstalacion'] == widget.reserva['idInstalacion'],
           orElse: () => inst.isNotEmpty ? inst[0] : null,
         );
-        // Preseleccionamos tarifa de la reserva original por nombre
+        // Preseleccionamos la tarifa de la reserva original por nombre
         _tarifaSeleccionada = tar.firstWhere(
           (t) => t['nombre'] == widget.reserva['tarifa'],
           orElse: () => tar.isNotEmpty ? tar[0] : null,
@@ -522,9 +625,11 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
     }
   }
 
-  /// Carga las horas disponibles para la selección actual.
+  /// Carga las horas disponibles para la instalación, tarifa y fecha actuales.
   Future<void> _cargarHoras() async {
-    if (_instalacionSeleccionada == null || _tarifaSeleccionada == null) return;
+    if (_instalacionSeleccionada == null || _tarifaSeleccionada == null) {
+      return;
+    }
     setState(() {
       _loadingHoras = true;
       _horaSeleccionada = null;
@@ -538,7 +643,8 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
         duracion: _tarifaSeleccionada!['duracionMinutos'],
       );
       setState(() {
-        _horas = (result['horas'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+        _horas = (result['horas'] as List<dynamic>? ?? [])
+            .cast<Map<String, dynamic>>();
         _loadingHoras = false;
       });
     } catch (_) {
@@ -548,26 +654,33 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
 
   /// Envía los nuevos datos a la API para reagendar la reserva.
   Future<void> _guardar() async {
-    if (_instalacionSeleccionada == null || _tarifaSeleccionada == null || _horaSeleccionada == null) return;
+    if (_instalacionSeleccionada == null ||
+        _tarifaSeleccionada == null ||
+        _horaSeleccionada == null)
+      return;
     setState(() => _guardando = true);
 
     final fecha = DateFormat('yyyy-MM-dd').format(_fechaSeleccionada);
     final fechaHora = '$fecha $_horaSeleccionada:00';
 
     try {
-      final result = await ApiService.reagendarReserva(widget.reserva['idReserva'], {
-        'dniSocio': widget.dniSocio,
-        'instalacion': _instalacionSeleccionada!['idInstalacion'],
-        'idTarifa': _tarifaSeleccionada!['idTarifa'],
-        'fechaHora': fechaHora,
-      });
+      final result =
+          await ApiService.reagendarReserva(widget.reserva['idReserva'], {
+            'dniSocio': widget.dniSocio,
+            'instalacion': _instalacionSeleccionada!['idInstalacion'],
+            'idTarifa': _tarifaSeleccionada!['idTarifa'],
+            'fechaHora': fechaHora,
+          });
       if (mounted) {
-        Navigator.pop(context);
+        Navigator.pop(context); // Cerramos el bottom sheet
         if (result['success'] == true) {
           widget.onActualizada();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result['message'] ?? 'Error al actualizar'), backgroundColor: AppTheme.danger),
+            SnackBar(
+              content: Text(result['message'] ?? 'Error al actualizar'),
+              backgroundColor: AppTheme.danger,
+            ),
           );
         }
       }
@@ -575,7 +688,10 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error de conexión'), backgroundColor: AppTheme.danger),
+          const SnackBar(
+            content: Text('Error de conexión'),
+            backgroundColor: AppTheme.danger,
+          ),
         );
       }
     } finally {
@@ -606,12 +722,13 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.4),
-                    borderRadius: BorderRadius.circular(2)),
+                  color: Colors.white.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
           ),
-          // Cabecera con botón de retroceso y título del paso
+          // Cabecera con botón de retroceso y título del paso actual
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             child: Row(
@@ -620,34 +737,44 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
                 if (_paso > 0)
                   GestureDetector(
                     onTap: () => setState(() => _paso--),
-                    child: const Icon(Icons.arrow_back_ios_rounded, size: 18, color: Colors.white),
+                    child: const Icon(
+                      Icons.arrow_back_ios_rounded,
+                      size: 18,
+                      color: Colors.white,
+                    ),
                   ),
                 const SizedBox(width: 8),
-                // Título dinámico según el paso actual
+                // Título dinámico según el paso
                 Text(
                   _paso == 0
                       ? 'Editar reserva — Pista'
                       : _paso == 1
-                          ? 'Editar reserva — Fecha'
-                          : 'Confirmar cambios',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white),
+                      ? 'Editar reserva — Fecha'
+                      : 'Confirmar cambios',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
                 ),
               ],
             ),
           ),
-          // Divider semitransparente
+          // Divider semitransparente entre cabecera y contenido
           Divider(color: Colors.white.withValues(alpha: 0.2), height: 1),
           // Contenido del paso actual con scroll
           Expanded(
             child: _loading
-                ? const Center(child: CircularProgressIndicator(color: Colors.white))
+                ? const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  )
                 : SingleChildScrollView(
                     padding: const EdgeInsets.all(20),
                     child: _paso == 0
                         ? _buildPaso0()
                         : _paso == 1
-                            ? _buildPaso1()
-                            : _buildPaso2(),
+                        ? _buildPaso1()
+                        : _buildPaso2(),
                   ),
           ),
         ],
@@ -655,62 +782,120 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
     );
   }
 
-  /// Paso 0: Selector de pista y duración/tarifa con estilo verde.
+  /// Paso 0: Selector de pista y tarifa filtrada por tipo de pista.
   Widget _buildPaso0() {
+    // Tarifas filtradas según el tipo de la pista seleccionada
+    final tarifasFiltradas = _tarifasFiltradas;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Elige una pista',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
+        const Text(
+          'Elige una pista',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
         const SizedBox(height: 12),
-        // Lista de instalaciones — blanco si seleccionada, semitransparente si no
-        ..._instalaciones.map((inst) => GestureDetector(
-              onTap: () => setState(() => _instalacionSeleccionada = inst),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                margin: const EdgeInsets.only(bottom: 10),
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: _instalacionSeleccionada?['idInstalacion'] == inst['idInstalacion']
+        // Lista de instalaciones
+        ..._instalaciones.map(
+          (inst) => GestureDetector(
+            onTap: () => setState(() {
+              _instalacionSeleccionada = inst;
+              // Reseteamos la tarifa al cambiar de pista
+              _tarifaSeleccionada = null;
+            }),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                // Blanco si seleccionada, semitransparente si no
+                color:
+                    _instalacionSeleccionada?['idInstalacion'] ==
+                        inst['idInstalacion']
+                    ? Colors.white
+                    : Colors.white.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color:
+                      _instalacionSeleccionada?['idInstalacion'] ==
+                          inst['idInstalacion']
                       ? Colors.white
-                      : Colors.white.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: _instalacionSeleccionada?['idInstalacion'] == inst['idInstalacion']
-                        ? Colors.white
-                        : Colors.white.withValues(alpha: 0.2),
-                    width: _instalacionSeleccionada?['idInstalacion'] == inst['idInstalacion'] ? 2 : 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.sports_tennis_rounded,
-                        color: _instalacionSeleccionada?['idInstalacion'] == inst['idInstalacion']
-                            ? const Color(0xFF1B4332)
-                            : Colors.white70,
-                        size: 20),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(inst['nombre'] ?? '',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                              color: _instalacionSeleccionada?['idInstalacion'] == inst['idInstalacion']
-                                  ? const Color(0xFF1B4332)
-                                  : Colors.white)),
-                    ),
-                    if (_instalacionSeleccionada?['idInstalacion'] == inst['idInstalacion'])
-                      const Icon(Icons.check_circle_rounded, color: Color(0xFF1B4332)),
-                  ],
+                      : Colors.white.withValues(alpha: 0.2),
+                  width:
+                      _instalacionSeleccionada?['idInstalacion'] ==
+                          inst['idInstalacion']
+                      ? 2
+                      : 1,
                 ),
               ),
-            )),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.sports_tennis_rounded,
+                    color:
+                        _instalacionSeleccionada?['idInstalacion'] ==
+                            inst['idInstalacion']
+                        ? const Color(0xFF1B4332)
+                        : Colors.white70,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      inst['nombre'] ?? '',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color:
+                            _instalacionSeleccionada?['idInstalacion'] ==
+                                inst['idInstalacion']
+                            ? const Color(0xFF1B4332)
+                            : Colors.white,
+                      ),
+                    ),
+                  ),
+                  if (_instalacionSeleccionada?['idInstalacion'] ==
+                      inst['idInstalacion'])
+                    const Icon(
+                      Icons.check_circle_rounded,
+                      color: Color(0xFF1B4332),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
         const SizedBox(height: 20),
-        const Text('Elige la duración',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
+        const Text(
+          'Elige la duración',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
         const SizedBox(height: 12),
-        // Lista de tarifas — mismo estilo que las instalaciones
-        ..._tarifas.map((tar) => GestureDetector(
+        // Mensaje si no hay tarifas para este tipo de pista
+        if (tarifasFiltradas.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Text(
+              'No hay tarifas disponibles para esta pista',
+              style: TextStyle(color: Colors.white70),
+            ),
+          )
+        else
+          // Lista de tarifas filtradas por tipo de pista
+          ...tarifasFiltradas.map(
+            (tar) => GestureDetector(
               onTap: () => setState(() => _tarifaSeleccionada = tar),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
@@ -725,45 +910,67 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
                     color: _tarifaSeleccionada?['idTarifa'] == tar['idTarifa']
                         ? Colors.white
                         : Colors.white.withValues(alpha: 0.2),
-                    width: _tarifaSeleccionada?['idTarifa'] == tar['idTarifa'] ? 2 : 1,
+                    width: _tarifaSeleccionada?['idTarifa'] == tar['idTarifa']
+                        ? 2
+                        : 1,
                   ),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.timer_rounded,
-                        color: _tarifaSeleccionada?['idTarifa'] == tar['idTarifa']
-                            ? const Color(0xFF1B4332)
-                            : Colors.white70,
-                        size: 20),
+                    Icon(
+                      Icons.timer_rounded,
+                      color: _tarifaSeleccionada?['idTarifa'] == tar['idTarifa']
+                          ? const Color(0xFF1B4332)
+                          : Colors.white70,
+                      size: 20,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Text('${tar['nombre']}',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w500,
-                              fontSize: 14,
-                              color: _tarifaSeleccionada?['idTarifa'] == tar['idTarifa']
-                                  ? const Color(0xFF1B4332)
-                                  : Colors.white)),
-                    ),
-                    Text('€${tar['precio']}',
+                      child: Text(
+                        // Nombre y descripción de la tarifa
+                        '${tar['nombre']} — ${tar['descripcion'] ?? ''}',
                         style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: _tarifaSeleccionada?['idTarifa'] == tar['idTarifa']
-                                ? const Color(0xFF1B4332)
-                                : Colors.white,
-                            fontSize: 15)),
-                    if (_tarifaSeleccionada?['idTarifa'] == tar['idTarifa']) ...[
+                          fontWeight: FontWeight.w500,
+                          fontSize: 14,
+                          color:
+                              _tarifaSeleccionada?['idTarifa'] ==
+                                  tar['idTarifa']
+                              ? const Color(0xFF1B4332)
+                              : Colors.white,
+                        ),
+                      ),
+                    ),
+                    // Precio de la tarifa
+                    Text(
+                      '€${tar['precio']}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color:
+                            _tarifaSeleccionada?['idTarifa'] == tar['idTarifa']
+                            ? const Color(0xFF1B4332)
+                            : Colors.white,
+                        fontSize: 15,
+                      ),
+                    ),
+                    if (_tarifaSeleccionada?['idTarifa'] ==
+                        tar['idTarifa']) ...[
                       const SizedBox(width: 8),
-                      const Icon(Icons.check_circle_rounded, color: Color(0xFF1B4332), size: 20),
+                      const Icon(
+                        Icons.check_circle_rounded,
+                        color: Color(0xFF1B4332),
+                        size: 20,
+                      ),
                     ],
                   ],
                 ),
               ),
-            )),
+            ),
+          ),
         const SizedBox(height: 24),
         // Botón continuar en blanco con texto verde
         ElevatedButton(
-          onPressed: (_instalacionSeleccionada != null && _tarifaSeleccionada != null)
+          onPressed:
+              (_instalacionSeleccionada != null && _tarifaSeleccionada != null)
               ? () {
                   setState(() => _paso = 1);
                   _cargarHoras();
@@ -773,10 +980,15 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
             backgroundColor: Colors.white,
             foregroundColor: const Color(0xFF1B4332),
             minimumSize: const Size(double.infinity, 52),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
             elevation: 0,
           ),
-          child: const Text('Continuar', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+          child: const Text(
+            'Continuar',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+          ),
         ),
       ],
     );
@@ -787,8 +999,14 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Selecciona la fecha',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
+        const Text(
+          'Selecciona la fecha',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
         const SizedBox(height: 12),
         // Calendario con fondo semitransparente
         Container(
@@ -797,21 +1015,33 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
             borderRadius: BorderRadius.circular(16),
           ),
           child: TableCalendar(
+            // Solo permite seleccionar desde mañana en adelante
             firstDay: DateTime.now().add(const Duration(days: 1)),
             lastDay: DateTime.now().add(const Duration(days: 60)),
             focusedDay: _fechaSeleccionada,
             selectedDayPredicate: (day) => isSameDay(day, _fechaSeleccionada),
             onDaySelected: (selected, focused) {
               setState(() => _fechaSeleccionada = selected);
-              _cargarHoras();
+              _cargarHoras(); // Recargamos horas al cambiar fecha
             },
             calendarStyle: CalendarStyle(
               // Día seleccionado en blanco con texto verde
-              selectedDecoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-              selectedTextStyle: const TextStyle(color: Color(0xFF1B4332), fontWeight: FontWeight.w700),
+              selectedDecoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              selectedTextStyle: const TextStyle(
+                color: Color(0xFF1B4332),
+                fontWeight: FontWeight.w700,
+              ),
               todayDecoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.3), shape: BoxShape.circle),
-              todayTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                color: Colors.white.withValues(alpha: 0.3),
+                shape: BoxShape.circle,
+              ),
+              todayTextStyle: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
               defaultTextStyle: const TextStyle(color: Colors.white),
               weekendTextStyle: const TextStyle(color: Colors.white70),
               outsideTextStyle: const TextStyle(color: Colors.white38),
@@ -819,7 +1049,11 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
             headerStyle: const HeaderStyle(
               formatButtonVisible: false,
               titleCentered: true,
-              titleTextStyle: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16),
+              titleTextStyle: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
+              ),
               leftChevronIcon: Icon(Icons.chevron_left, color: Colors.white),
               rightChevronIcon: Icon(Icons.chevron_right, color: Colors.white),
             ),
@@ -831,14 +1065,25 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
           ),
         ),
         const SizedBox(height: 20),
-        const Text('Elige una hora',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
+        const Text(
+          'Elige una hora',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
         const SizedBox(height: 12),
-        // Grid de horas con estilo semitransparente
+        // Grid de horas disponibles
         if (_loadingHoras)
           const Center(child: CircularProgressIndicator(color: Colors.white))
         else if (_horas.isEmpty)
-          const Center(child: Text('No hay horas disponibles', style: TextStyle(color: Colors.white70)))
+          const Center(
+            child: Text(
+              'No hay horas disponibles',
+              style: TextStyle(color: Colors.white70),
+            ),
+          )
         else
           Wrap(
             spacing: 10,
@@ -848,30 +1093,41 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
               final disponible = h['disponible'] as bool;
               final selected = _horaSeleccionada == hora;
               return GestureDetector(
-                onTap: disponible ? () => setState(() => _horaSeleccionada = hora) : null,
+                onTap: disponible
+                    ? () => setState(() => _horaSeleccionada = hora)
+                    : null,
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
-                    // Blanco si seleccionada, semitransparente si disponible, casi invisible si ocupada
+                    // Blanco si seleccionada, casi invisible si ocupada
                     color: !disponible
                         ? Colors.white.withValues(alpha: 0.05)
                         : selected
-                            ? Colors.white
-                            : Colors.white.withValues(alpha: 0.15),
+                        ? Colors.white
+                        : Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                        color: selected ? Colors.white : Colors.white.withValues(alpha: 0.3)),
+                      color: selected
+                          ? Colors.white
+                          : Colors.white.withValues(alpha: 0.3),
+                    ),
                   ),
-                  child: Text(hora,
-                      style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: !disponible
-                              ? Colors.white30
-                              : selected
-                                  ? const Color(0xFF1B4332)
-                                  : Colors.white)),
+                  child: Text(
+                    hora,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: !disponible
+                          ? Colors.white30
+                          : selected
+                          ? const Color(0xFF1B4332)
+                          : Colors.white,
+                    ),
+                  ),
                 ),
               );
             }).toList(),
@@ -879,15 +1135,22 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
         const SizedBox(height: 24),
         // Botón continuar en blanco con texto verde
         ElevatedButton(
-          onPressed: _horaSeleccionada != null ? () => setState(() => _paso = 2) : null,
+          onPressed: _horaSeleccionada != null
+              ? () => setState(() => _paso = 2)
+              : null,
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.white,
             foregroundColor: const Color(0xFF1B4332),
             minimumSize: const Size(double.infinity, 52),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
             elevation: 0,
           ),
-          child: const Text('Continuar', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+          child: const Text(
+            'Continuar',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+          ),
         ),
       ],
     );
@@ -898,10 +1161,16 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Confirma los cambios',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
+        const Text(
+          'Confirma los cambios',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
         const SizedBox(height: 16),
-        // Tarjeta resumen semitransparente
+        // Tarjeta resumen semitransparente con todos los datos
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -911,16 +1180,35 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
           ),
           child: Column(
             children: [
-              _resumenRow(Icons.sports_tennis_rounded, 'Pista', _instalacionSeleccionada?['nombre'] ?? ''),
+              _resumenRow(
+                Icons.sports_tennis_rounded,
+                'Pista',
+                _instalacionSeleccionada?['nombre'] ?? '',
+              ),
               Divider(color: Colors.white.withValues(alpha: 0.2), height: 24),
-              _resumenRow(Icons.timer_rounded, 'Duración', '${_tarifaSeleccionada?['duracionMinutos']} min'),
+              _resumenRow(
+                Icons.timer_rounded,
+                'Duración',
+                '${_tarifaSeleccionada?['duracionMinutos']} min',
+              ),
               Divider(color: Colors.white.withValues(alpha: 0.2), height: 24),
-              _resumenRow(Icons.calendar_today_rounded, 'Fecha',
-                  DateFormat('EEEE d MMMM', 'es').format(_fechaSeleccionada)),
+              _resumenRow(
+                Icons.calendar_today_rounded,
+                'Fecha',
+                DateFormat('EEEE d MMMM', 'es').format(_fechaSeleccionada),
+              ),
               Divider(color: Colors.white.withValues(alpha: 0.2), height: 24),
-              _resumenRow(Icons.access_time_rounded, 'Hora', _horaSeleccionada ?? ''),
+              _resumenRow(
+                Icons.access_time_rounded,
+                'Hora',
+                _horaSeleccionada ?? '',
+              ),
               Divider(color: Colors.white.withValues(alpha: 0.2), height: 24),
-              _resumenRow(Icons.euro_rounded, 'Precio', '€${_tarifaSeleccionada?['precio']}'),
+              _resumenRow(
+                Icons.euro_rounded,
+                'Precio',
+                '€${_tarifaSeleccionada?['precio']}',
+              ),
             ],
           ),
         ),
@@ -932,16 +1220,24 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
             backgroundColor: Colors.white,
             foregroundColor: const Color(0xFF1B4332),
             minimumSize: const Size(double.infinity, 52),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
             elevation: 0,
           ),
           child: _guardando
               ? const SizedBox(
                   height: 20,
                   width: 20,
-                  child: CircularProgressIndicator(color: Color(0xFF1B4332), strokeWidth: 2))
-              : const Text('Confirmar cambios',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                  child: CircularProgressIndicator(
+                    color: Color(0xFF1B4332),
+                    strokeWidth: 2,
+                  ),
+                )
+              : const Text(
+                  'Confirmar cambios',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                ),
         ),
       ],
     );
@@ -953,9 +1249,19 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
       children: [
         Icon(icon, color: Colors.white70, size: 20),
         const SizedBox(width: 12),
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 14)),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white70, fontSize: 14),
+        ),
         const Spacer(),
-        Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+        ),
       ],
     );
   }
@@ -965,11 +1271,11 @@ class _EditarReservaBottomSheetState extends State<_EditarReservaBottomSheet> {
 /// Tiene el mismo degradado verde que el resto de la app.
 /// Permite elegir una puntuación de 1 a 5 estrellas y añadir comentario.
 class _ResenaBottomSheet extends StatefulWidget {
-  final String idInstalacion;      // ID de la pista a reseñar
-  final String nombreInstalacion;  // Nombre de la pista
-  final String nombreAutor;        // Nombre completo del socio
-  final String dniSocio;           // DNI del socio para la API
-  final VoidCallback onEnviada;    // Callback cuando la reseña se envía con éxito
+  final String idInstalacion; // ID de la pista a reseñar
+  final String nombreInstalacion; // Nombre de la pista
+  final String nombreAutor; // Nombre completo del socio
+  final String dniSocio; // DNI del socio para la API
+  final VoidCallback onEnviada; // Callback cuando la reseña se envía con éxito
 
   const _ResenaBottomSheet({
     required this.idInstalacion,
@@ -996,7 +1302,7 @@ class _ResenaBottomSheetState extends State<_ResenaBottomSheet> {
     super.dispose();
   }
 
-  /// Envía la reseña a la API con la puntuación y el comentario del usuario.
+  /// Envía la reseña a la API con la puntuación y el comentario.
   Future<void> _enviar() async {
     setState(() => _enviando = true);
     try {
@@ -1007,14 +1313,15 @@ class _ResenaBottomSheetState extends State<_ResenaBottomSheet> {
         'dniSocio': widget.dniSocio,
       });
       if (mounted) {
-        Navigator.pop(context);
+        Navigator.pop(context); // Cerramos el bottom sheet
         if (result['success'] == true) {
           widget.onEnviada();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-                content: Text(result['message'] ?? 'Error al enviar reseña'),
-                backgroundColor: AppTheme.danger),
+              content: Text(result['message'] ?? 'Error al enviar reseña'),
+              backgroundColor: AppTheme.danger,
+            ),
           );
         }
       }
@@ -1022,7 +1329,10 @@ class _ResenaBottomSheetState extends State<_ResenaBottomSheet> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error de conexión'), backgroundColor: AppTheme.danger),
+          const SnackBar(
+            content: Text('Error de conexión'),
+            backgroundColor: AppTheme.danger,
+          ),
         );
       }
     } finally {
@@ -1042,7 +1352,7 @@ class _ResenaBottomSheetState extends State<_ResenaBottomSheet> {
         ),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      // Padding extra para que el teclado no tape el formulario
+      // Padding para que el teclado no tape el formulario
       padding: EdgeInsets.only(
         left: 24,
         right: 24,
@@ -1059,20 +1369,35 @@ class _ResenaBottomSheetState extends State<_ResenaBottomSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(2)),
+                color: Colors.white.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
           ),
           const SizedBox(height: 20),
-          // Título y nombre de la pista en blanco
-          const Text('¿Cómo fue tu partida?',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
+          // Título y nombre de la pista
+          const Text(
+            '¿Cómo fue tu partida?',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(widget.nombreInstalacion,
-              style: const TextStyle(color: Colors.white70, fontSize: 14)),
+          Text(
+            widget.nombreInstalacion,
+            style: const TextStyle(color: Colors.white70, fontSize: 14),
+          ),
           const SizedBox(height: 24),
-          const Text('Puntuación',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
+          const Text(
+            'Puntuación',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
           const SizedBox(height: 10),
           // Selector de estrellas doradas (1 a 5)
           Row(
@@ -1083,7 +1408,9 @@ class _ResenaBottomSheetState extends State<_ResenaBottomSheet> {
                 child: Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: Icon(
-                    estrella <= _puntuacion ? Icons.star_rounded : Icons.star_outline_rounded,
+                    estrella <= _puntuacion
+                        ? Icons.star_rounded
+                        : Icons.star_outline_rounded,
                     color: AppTheme.accent,
                     size: 36,
                   ),
@@ -1092,10 +1419,16 @@ class _ResenaBottomSheetState extends State<_ResenaBottomSheet> {
             }),
           ),
           const SizedBox(height: 20),
-          const Text('Comentario (opcional)',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
+          const Text(
+            'Comentario (opcional)',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
           const SizedBox(height: 10),
-          // Campo de texto con estilo adaptado al fondo verde
+          // Campo de texto adaptado al fondo verde
           TextField(
             controller: _comentarioCtrl,
             maxLines: 3,
@@ -1108,15 +1441,22 @@ class _ResenaBottomSheetState extends State<_ResenaBottomSheet> {
               fillColor: Colors.white.withValues(alpha: 0.12),
               counterStyle: const TextStyle(color: Colors.white54),
               border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2))),
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.2),
+                ),
+              ),
               enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2))),
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.2),
+                ),
+              ),
               // Borde blanco sólido al enfocar
               focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.white, width: 2)),
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.white, width: 2),
+              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -1127,16 +1467,24 @@ class _ResenaBottomSheetState extends State<_ResenaBottomSheet> {
               backgroundColor: Colors.white,
               foregroundColor: const Color(0xFF1B4332),
               minimumSize: const Size(double.infinity, 52),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
               elevation: 0,
             ),
             child: _enviando
                 ? const SizedBox(
                     height: 20,
                     width: 20,
-                    child: CircularProgressIndicator(color: Color(0xFF1B4332), strokeWidth: 2))
-                : const Text('Enviar reseña',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                    child: CircularProgressIndicator(
+                      color: Color(0xFF1B4332),
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Text(
+                    'Enviar reseña',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                  ),
           ),
         ],
       ),
