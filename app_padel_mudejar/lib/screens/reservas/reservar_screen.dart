@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -11,6 +10,10 @@ import '../../providers/auth_provider.dart';
 /// Pantalla principal para crear una nueva reserva.
 /// Tiene 3 pasos: elegir pista/duración → elegir fecha/hora → confirmar.
 /// Puede recibir una [instalacionInicial] si el usuario viene desde el detalle de una pista.
+/// Las tarifas se filtran según el tipo de pista seleccionada:
+/// - Pádel → tarifas de pádel y generales
+/// - Tenis → tarifas de tenis y generales
+/// - Fútbol Sala → no se puede reservar desde la app
 class ReservarScreen extends StatefulWidget {
   final Map<String, dynamic>? instalacionInicial;
 
@@ -23,7 +26,7 @@ class ReservarScreen extends StatefulWidget {
 class _ReservarScreenState extends State<ReservarScreen> {
   // --- Datos cargados de la API ---
   List<dynamic> _instalaciones = [];
-  List<dynamic> _tarifas = [];
+  List<dynamic> _tarifas = []; // Todas las tarifas sin filtrar
 
   // --- Selecciones del usuario ---
   Map<String, dynamic>? _instalacionSeleccionada;
@@ -46,6 +49,33 @@ class _ReservarScreenState extends State<ReservarScreen> {
     _cargarDatos();
   }
 
+  /// Devuelve las tarifas filtradas según el tipo de la instalación seleccionada.
+  /// - Pádel → tarifas cuyo tipo_pista sea 'Pádel' o null (generales)
+  /// - Tenis → tarifas cuyo tipo_pista sea 'Tenis' o null (generales)
+  /// - Otros → todas las tarifas
+  List<dynamic> get _tarifasFiltradas {
+    if (_instalacionSeleccionada == null) return _tarifas;
+    final tipoPista =
+        (_instalacionSeleccionada!['tipo'] as String? ?? '').toLowerCase();
+
+    return _tarifas.where((t) {
+      final tipoPistaApi =
+          (t['tipo_pista'] as String? ?? '').toLowerCase();
+      // Las tarifas generales (tipo_pista null o vacío) aplican a todas
+      if (tipoPistaApi.isEmpty) return true;
+      // Filtramos por tipo de pista
+      if (tipoPista.contains('pádel') || tipoPista.contains('padel')) {
+        return tipoPistaApi.contains('pádel') ||
+            tipoPistaApi.contains('padel');
+      }
+      if (tipoPista.contains('tenis')) {
+        return tipoPistaApi.contains('tenis');
+      }
+      // Para cualquier otro tipo, mostramos todas
+      return true;
+    }).toList();
+  }
+
   /// Carga las instalaciones y tarifas desde la API.
   /// Si viene con una instalación preseleccionada, la marca y carga las horas disponibles.
   Future<void> _cargarDatos() async {
@@ -58,11 +88,14 @@ class _ReservarScreenState extends State<ReservarScreen> {
         // Si viene desde el detalle de una pista, preseleccionamos esa pista
         if (widget.instalacionInicial != null) {
           _instalacionSeleccionada = inst.firstWhere(
-            (i) => i['idInstalacion'] == widget.instalacionInicial!['idInstalacion'],
+            (i) =>
+                i['idInstalacion'] ==
+                widget.instalacionInicial!['idInstalacion'],
             orElse: () => inst.isNotEmpty ? inst[0] : null,
           );
-          // Preseleccionar la primera tarifa por defecto
-          if (tar.isNotEmpty) _tarifaSeleccionada = tar[0];
+          // Preseleccionamos la primera tarifa filtrada por defecto
+          final filtradas = _tarifasFiltradas;
+          if (filtradas.isNotEmpty) _tarifaSeleccionada = filtradas[0];
         }
         _loadingInstalaciones = false;
       });
@@ -89,7 +122,8 @@ class _ReservarScreenState extends State<ReservarScreen> {
         duracion: _tarifaSeleccionada!['duracionMinutos'],
       );
       setState(() {
-        _horas = (result['horas'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+        _horas = (result['horas'] as List<dynamic>? ?? [])
+            .cast<Map<String, dynamic>>();
         _loadingHoras = false;
       });
     } catch (_) {
@@ -99,7 +133,9 @@ class _ReservarScreenState extends State<ReservarScreen> {
 
   /// Envía la reserva a la API y muestra el resultado al usuario.
   Future<void> _confirmarReserva() async {
-    if (_instalacionSeleccionada == null || _tarifaSeleccionada == null || _horaSeleccionada == null) return;
+    if (_instalacionSeleccionada == null ||
+        _tarifaSeleccionada == null ||
+        _horaSeleccionada == null) return;
     setState(() => _guardando = true);
 
     final auth = context.read<AuthProvider>();
@@ -127,6 +163,7 @@ class _ReservarScreenState extends State<ReservarScreen> {
   }
 
   /// Muestra un diálogo de confirmación con los detalles de la reserva creada.
+  /// Al aceptar recarga las horas y vuelve al paso 1.
   void _mostrarExito() {
     showDialog(
       context: context,
@@ -138,15 +175,15 @@ class _ReservarScreenState extends State<ReservarScreen> {
             // Icono de check en círculo verde
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(color: Color(0xFFE8F8EF), shape: BoxShape.circle),
-              child: const Icon(Icons.check_rounded, color: AppTheme.primary, size: 40),
+              decoration: const BoxDecoration(
+                  color: Color(0xFFE8F8EF), shape: BoxShape.circle),
+              child: const Icon(Icons.check_rounded,
+                  color: AppTheme.primary, size: 40),
             ),
             const SizedBox(height: 16),
-            const Text(
-              '¡Reserva confirmada!',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-              textAlign: TextAlign.center,
-            ),
+            const Text('¡Reserva confirmada!',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                textAlign: TextAlign.center),
             const SizedBox(height: 8),
             // Detalles de la reserva creada
             Text(
@@ -160,10 +197,17 @@ class _ReservarScreenState extends State<ReservarScreen> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.of(context, rootNavigator: true).pop();
-              context.pop(); // Vuelve a la pantalla anterior
+              Navigator.of(context, rootNavigator: true).pop(); // Cierra el diálogo
+              // Volvemos al paso 1 y recargamos las horas actualizadas
+              setState(() {
+                _paso = 1;
+                _horaSeleccionada = null;
+                _horas = [];
+              });
+              _cargarHoras();
             },
-            child: const Text('Aceptar', style: TextStyle(color: AppTheme.primary)),
+            child: const Text('Aceptar',
+                style: TextStyle(color: AppTheme.primary)),
           ),
         ],
       ),
@@ -180,9 +224,11 @@ class _ReservarScreenState extends State<ReservarScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Color de fondo que coincide con el inicio del degradado
       backgroundColor: const Color(0xFF52B788),
       appBar: AppBar(
-        title: const Text('Reservar Pista', style: TextStyle(color: Colors.white)),
+        title: const Text('Reservar Pista',
+            style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
@@ -230,8 +276,8 @@ class _ReservarScreenState extends State<ReservarScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Row(
         children: List.generate(3, (i) {
-          final active = i == _paso;  // Paso actual
-          final done = i < _paso;     // Paso ya completado
+          final active = i == _paso; // Paso actual
+          final done = i < _paso;   // Paso ya completado
           return Expanded(
             child: Row(
               children: [
@@ -240,7 +286,9 @@ class _ReservarScreenState extends State<ReservarScreen> {
                   Expanded(
                     child: Container(
                       height: 2,
-                      color: done ? Colors.white : Colors.white.withValues(alpha: 0.3),
+                      color: done
+                          ? Colors.white
+                          : Colors.white.withValues(alpha: 0.3),
                     ),
                   ),
                 // Círculo del paso
@@ -250,18 +298,23 @@ class _ReservarScreenState extends State<ReservarScreen> {
                       width: 28,
                       height: 28,
                       decoration: BoxDecoration(
-                        color: done || active ? Colors.white : Colors.white.withValues(alpha: 0.2),
+                        color: done || active
+                            ? Colors.white
+                            : Colors.white.withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                       ),
                       child: Center(
                         child: done
-                            ? const Icon(Icons.check, color: Color(0xFF1B4332), size: 14)
+                            ? const Icon(Icons.check,
+                                color: Color(0xFF1B4332), size: 14)
                             : Text(
                                 '${i + 1}',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: active ? const Color(0xFF1B4332) : Colors.white60,
+                                  color: active
+                                      ? const Color(0xFF1B4332)
+                                      : Colors.white60,
                                 ),
                               ),
                       ),
@@ -272,7 +325,8 @@ class _ReservarScreenState extends State<ReservarScreen> {
                       style: TextStyle(
                         fontSize: 10,
                         color: active || done ? Colors.white : Colors.white60,
-                        fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+                        fontWeight:
+                            active ? FontWeight.w600 : FontWeight.w400,
                       ),
                     ),
                   ],
@@ -282,7 +336,9 @@ class _ReservarScreenState extends State<ReservarScreen> {
                   Expanded(
                     child: Container(
                       height: 2,
-                      color: i < _paso ? Colors.white : Colors.white.withValues(alpha: 0.3),
+                      color: i < _paso
+                          ? Colors.white
+                          : Colors.white.withValues(alpha: 0.3),
                     ),
                   ),
               ],
@@ -294,7 +350,11 @@ class _ReservarScreenState extends State<ReservarScreen> {
   }
 
   /// Paso 0: Selección de pista (si no viene preseleccionada) y duración/tarifa.
+  /// Las tarifas se filtran automáticamente según el tipo de pista seleccionada.
   Widget _buildPaso0() {
+    // Tarifas filtradas según el tipo de la pista seleccionada
+    final tarifasFiltradas = _tarifasFiltradas;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -304,35 +364,58 @@ class _ReservarScreenState extends State<ReservarScreen> {
           const SizedBox(height: 12),
           ..._instalaciones.map((inst) => _InstalacionCard(
                 instalacion: inst,
-                selected: _instalacionSeleccionada?['idInstalacion'] == inst['idInstalacion'],
-                onTap: () => setState(() => _instalacionSeleccionada = inst),
+                selected: _instalacionSeleccionada?['idInstalacion'] ==
+                    inst['idInstalacion'],
+                onTap: () => setState(() {
+                  _instalacionSeleccionada = inst;
+                  // Reseteamos la tarifa al cambiar de pista para forzar nueva selección
+                  _tarifaSeleccionada = null;
+                }),
               )),
           const SizedBox(height: 24),
         ],
         _sectionTitle('Elige la duración'),
         const SizedBox(height: 12),
-        ..._tarifas.map((tarifa) => _TarifaCard(
-              tarifa: tarifa,
-              selected: _tarifaSeleccionada?['idTarifa'] == tarifa['idTarifa'],
-              onTap: () => setState(() => _tarifaSeleccionada = tarifa),
-            )),
+        // Mostramos solo las tarifas compatibles con la pista seleccionada
+        if (tarifasFiltradas.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Text(
+              'No hay tarifas disponibles para esta pista',
+              style: TextStyle(color: Colors.white70),
+            ),
+          )
+        else
+          ...tarifasFiltradas.map((tarifa) => _TarifaCard(
+                tarifa: tarifa,
+                selected:
+                    _tarifaSeleccionada?['idTarifa'] == tarifa['idTarifa'],
+                onTap: () => setState(() => _tarifaSeleccionada = tarifa),
+              )),
         const SizedBox(height: 32),
         // Botón continuar — solo activo si hay pista y tarifa seleccionadas
         ElevatedButton(
-          onPressed: (_instalacionSeleccionada != null && _tarifaSeleccionada != null)
-              ? () {
-                  setState(() => _paso = 1);
-                  _cargarHoras();
-                }
-              : null,
+          onPressed:
+              (_instalacionSeleccionada != null && _tarifaSeleccionada != null)
+                  ? () {
+                      setState(() => _paso = 1);
+                      _cargarHoras();
+                    }
+                  : null,
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.white,
             foregroundColor: const Color(0xFF1B4332),
             minimumSize: const Size(double.infinity, 52),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14)),
             elevation: 0,
           ),
-          child: const Text('Continuar', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+          child: const Text('Continuar',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
         ),
       ],
     );
@@ -361,10 +444,16 @@ class _ReservarScreenState extends State<ReservarScreen> {
               _cargarHoras(); // Recargamos horas al cambiar fecha
             },
             calendarStyle: CalendarStyle(
-              selectedDecoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-              selectedTextStyle: const TextStyle(color: Color(0xFF1B4332), fontWeight: FontWeight.w700),
-              todayDecoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.3), shape: BoxShape.circle),
-              todayTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+              // Día seleccionado en blanco con texto verde
+              selectedDecoration: const BoxDecoration(
+                  color: Colors.white, shape: BoxShape.circle),
+              selectedTextStyle: const TextStyle(
+                  color: Color(0xFF1B4332), fontWeight: FontWeight.w700),
+              todayDecoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.3),
+                  shape: BoxShape.circle),
+              todayTextStyle: const TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.w700),
               defaultTextStyle: const TextStyle(color: Colors.white),
               weekendTextStyle: const TextStyle(color: Colors.white70),
               outsideTextStyle: const TextStyle(color: Colors.white38),
@@ -372,9 +461,14 @@ class _ReservarScreenState extends State<ReservarScreen> {
             headerStyle: const HeaderStyle(
               formatButtonVisible: false,
               titleCentered: true,
-              titleTextStyle: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16),
-              leftChevronIcon: Icon(Icons.chevron_left, color: Colors.white),
-              rightChevronIcon: Icon(Icons.chevron_right, color: Colors.white),
+              titleTextStyle: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16),
+              leftChevronIcon:
+                  Icon(Icons.chevron_left, color: Colors.white),
+              rightChevronIcon:
+                  Icon(Icons.chevron_right, color: Colors.white),
             ),
             daysOfWeekStyle: const DaysOfWeekStyle(
               weekdayStyle: TextStyle(color: Colors.white70, fontSize: 12),
@@ -386,11 +480,13 @@ class _ReservarScreenState extends State<ReservarScreen> {
         const SizedBox(height: 24),
         _sectionTitle('Elige una hora'),
         const SizedBox(height: 12),
-        // Grid de horas disponibles
+        // Grid de horas disponibles con estilo semitransparente
         if (_loadingHoras)
           const Center(child: CircularProgressIndicator(color: Colors.white))
         else if (_horas.isEmpty)
-          const Center(child: Text('No hay horas disponibles para este día', style: TextStyle(color: Colors.white70)))
+          const Center(
+              child: Text('No hay horas disponibles para este día',
+                  style: TextStyle(color: Colors.white70)))
         else
           Wrap(
             spacing: 10,
@@ -400,12 +496,15 @@ class _ReservarScreenState extends State<ReservarScreen> {
               final disponible = h['disponible'] as bool;
               final selected = _horaSeleccionada == hora;
               return GestureDetector(
-                onTap: disponible ? () => setState(() => _horaSeleccionada = hora) : null,
+                onTap: disponible
+                    ? () => setState(() => _horaSeleccionada = hora)
+                    : null,
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 10),
                   decoration: BoxDecoration(
-                    // Blanco si seleccionado, semitransparente si disponible, casi invisible si ocupado
+                    // Blanco si seleccionado, semitransparente si disponible
                     color: !disponible
                         ? Colors.white.withValues(alpha: 0.05)
                         : selected
@@ -413,21 +512,21 @@ class _ReservarScreenState extends State<ReservarScreen> {
                             : Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: selected ? Colors.white : Colors.white.withValues(alpha: 0.3),
+                      color: selected
+                          ? Colors.white
+                          : Colors.white.withValues(alpha: 0.3),
                     ),
                   ),
-                  child: Text(
-                    hora,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: !disponible
-                          ? Colors.white30
-                          : selected
-                              ? const Color(0xFF1B4332)
-                              : Colors.white,
-                    ),
-                  ),
+                  child: Text(hora,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: !disponible
+                            ? Colors.white30
+                            : selected
+                                ? const Color(0xFF1B4332)
+                                : Colors.white,
+                      )),
                 ),
               );
             }).toList(),
@@ -435,15 +534,19 @@ class _ReservarScreenState extends State<ReservarScreen> {
         const SizedBox(height: 32),
         // Botón continuar — solo activo si hay hora seleccionada
         ElevatedButton(
-          onPressed: _horaSeleccionada != null ? () => setState(() => _paso = 2) : null,
+          onPressed: _horaSeleccionada != null
+              ? () => setState(() => _paso = 2)
+              : null,
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.white,
             foregroundColor: const Color(0xFF1B4332),
             minimumSize: const Size(double.infinity, 52),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14)),
             elevation: 0,
           ),
-          child: const Text('Continuar', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+          child: const Text('Continuar',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
         ),
       ],
     );
@@ -456,7 +559,7 @@ class _ReservarScreenState extends State<ReservarScreen> {
       children: [
         _sectionTitle('Confirma tu reserva'),
         const SizedBox(height: 20),
-        // Tarjeta resumen con todos los datos de la reserva
+        // Tarjeta resumen semitransparente con todos los datos
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -466,15 +569,31 @@ class _ReservarScreenState extends State<ReservarScreen> {
           ),
           child: Column(
             children: [
-              _resumenRow(Icons.sports_tennis_rounded, 'Pista', _instalacionSeleccionada?['nombre'] ?? ''),
-              Divider(height: 24, color: Colors.white.withValues(alpha: 0.2)),
-              _resumenRow(Icons.timer_rounded, 'Duración', '${_tarifaSeleccionada?['duracionMinutos']} min'),
-              Divider(height: 24, color: Colors.white.withValues(alpha: 0.2)),
-              _resumenRow(Icons.calendar_today_rounded, 'Fecha', DateFormat('EEEE d MMMM', 'es').format(_fechaSeleccionada)),
-              Divider(height: 24, color: Colors.white.withValues(alpha: 0.2)),
-              _resumenRow(Icons.access_time_rounded, 'Hora', _horaSeleccionada ?? ''),
-              Divider(height: 24, color: Colors.white.withValues(alpha: 0.2)),
-              _resumenRow(Icons.euro_rounded, 'Precio', '€${_tarifaSeleccionada?['precio']}'),
+              _resumenRow(Icons.sports_tennis_rounded, 'Pista',
+                  _instalacionSeleccionada?['nombre'] ?? ''),
+              Divider(
+                  height: 24,
+                  color: Colors.white.withValues(alpha: 0.2)),
+              _resumenRow(Icons.timer_rounded, 'Duración',
+                  '${_tarifaSeleccionada?['duracionMinutos']} min'),
+              Divider(
+                  height: 24,
+                  color: Colors.white.withValues(alpha: 0.2)),
+              _resumenRow(
+                  Icons.calendar_today_rounded,
+                  'Fecha',
+                  DateFormat('EEEE d MMMM', 'es')
+                      .format(_fechaSeleccionada)),
+              Divider(
+                  height: 24,
+                  color: Colors.white.withValues(alpha: 0.2)),
+              _resumenRow(Icons.access_time_rounded, 'Hora',
+                  _horaSeleccionada ?? ''),
+              Divider(
+                  height: 24,
+                  color: Colors.white.withValues(alpha: 0.2)),
+              _resumenRow(Icons.euro_rounded, 'Precio',
+                  '€${_tarifaSeleccionada?['precio']}'),
             ],
           ),
         ).animate().fadeIn().slideY(begin: 0.1, end: 0),
@@ -486,33 +605,49 @@ class _ReservarScreenState extends State<ReservarScreen> {
             backgroundColor: Colors.white,
             foregroundColor: const Color(0xFF1B4332),
             minimumSize: const Size(double.infinity, 52),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14)),
             elevation: 0,
           ),
           child: _guardando
-              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Color(0xFF1B4332), strokeWidth: 2))
-              : const Text('Confirmar reserva', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                      color: Color(0xFF1B4332), strokeWidth: 2))
+              : const Text('Confirmar reserva',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w700, fontSize: 16)),
         ).animate().fadeIn(delay: 200.ms),
       ],
     );
   }
 
-  /// Fila de resumen con icono, etiqueta y valor.
+  /// Fila de resumen con icono, etiqueta y valor en blanco.
   Widget _resumenRow(IconData icon, String label, String value) {
     return Row(
       children: [
         Icon(icon, color: Colors.white70, size: 20),
         const SizedBox(width: 12),
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 14)),
+        Text(label,
+            style: const TextStyle(color: Colors.white70, fontSize: 14)),
         const Spacer(),
-        Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+        Text(value,
+            style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 14)),
       ],
     );
   }
 
   /// Título de sección en blanco.
   Widget _sectionTitle(String title) {
-    return Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white));
+    return Text(title,
+        style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: Colors.white));
   }
 }
 
@@ -523,7 +658,10 @@ class _InstalacionCard extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  const _InstalacionCard({required this.instalacion, required this.selected, required this.onTap});
+  const _InstalacionCard(
+      {required this.instalacion,
+      required this.selected,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -534,37 +672,53 @@ class _InstalacionCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: selected ? Colors.white : Colors.white.withValues(alpha: 0.12),
+          // Blanco si seleccionada, semitransparente si no
+          color: selected
+              ? Colors.white
+              : Colors.white.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: selected ? Colors.white : Colors.white.withValues(alpha: 0.2),
+            color: selected
+                ? Colors.white
+                : Colors.white.withValues(alpha: 0.2),
             width: selected ? 2 : 1,
           ),
         ),
         child: Row(
           children: [
             Icon(Icons.sports_tennis_rounded,
-                color: selected ? const Color(0xFF1B4332) : Colors.white70, size: 22),
+                color: selected
+                    ? const Color(0xFF1B4332)
+                    : Colors.white70,
+                size: 22),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Nombre de la pista
                   Text(instalacion['nombre'] ?? '',
                       style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
-                          color: selected ? const Color(0xFF1B4332) : Colors.white)),
+                          color: selected
+                              ? const Color(0xFF1B4332)
+                              : Colors.white)),
+                  // Ubicación si existe
                   if (instalacion['ubicacion'] != null)
                     Text(instalacion['ubicacion'],
                         style: TextStyle(
                             fontSize: 12,
-                            color: selected ? const Color(0xFF2D6A4F) : Colors.white60)),
+                            color: selected
+                                ? const Color(0xFF2D6A4F)
+                                : Colors.white60)),
                 ],
               ),
             ),
             // Check de seleccionado
-            if (selected) const Icon(Icons.check_circle_rounded, color: Color(0xFF1B4332)),
+            if (selected)
+              const Icon(Icons.check_circle_rounded,
+                  color: Color(0xFF1B4332)),
           ],
         ),
       ),
@@ -573,13 +727,16 @@ class _InstalacionCard extends StatelessWidget {
 }
 
 /// Tarjeta para seleccionar una tarifa/duración.
-/// Muestra el nombre, descripción y precio.
+/// Solo se muestran las tarifas compatibles con el tipo de pista seleccionada.
 class _TarifaCard extends StatelessWidget {
   final dynamic tarifa;
   final bool selected;
   final VoidCallback onTap;
 
-  const _TarifaCard({required this.tarifa, required this.selected, required this.onTap});
+  const _TarifaCard(
+      {required this.tarifa,
+      required this.selected,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -590,34 +747,49 @@ class _TarifaCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: selected ? Colors.white : Colors.white.withValues(alpha: 0.12),
+          color: selected
+              ? Colors.white
+              : Colors.white.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: selected ? Colors.white : Colors.white.withValues(alpha: 0.2),
+            color: selected
+                ? Colors.white
+                : Colors.white.withValues(alpha: 0.2),
             width: selected ? 2 : 1,
           ),
         ),
         child: Row(
           children: [
             Icon(Icons.timer_rounded,
-                color: selected ? const Color(0xFF1B4332) : Colors.white70, size: 20),
+                color: selected
+                    ? const Color(0xFF1B4332)
+                    : Colors.white70,
+                size: 20),
             const SizedBox(width: 12),
             Expanded(
-              child: Text('${tarifa['nombre']} — ${tarifa['descripcion'] ?? ''}',
-                  style: TextStyle(
-                      fontWeight: FontWeight.w500,
-                      fontSize: 14,
-                      color: selected ? const Color(0xFF1B4332) : Colors.white)),
+              child: Text(
+                // Nombre y descripción de la tarifa
+                '${tarifa['nombre']} — ${tarifa['descripcion'] ?? ''}',
+                style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    color: selected
+                        ? const Color(0xFF1B4332)
+                        : Colors.white),
+              ),
             ),
             // Precio de la tarifa
             Text('€${tarifa['precio']}',
                 style: TextStyle(
                     fontWeight: FontWeight.w700,
-                    color: selected ? const Color(0xFF1B4332) : Colors.white,
+                    color: selected
+                        ? const Color(0xFF1B4332)
+                        : Colors.white,
                     fontSize: 15)),
             if (selected) ...[
               const SizedBox(width: 8),
-              const Icon(Icons.check_circle_rounded, color: Color(0xFF1B4332), size: 20),
+              const Icon(Icons.check_circle_rounded,
+                  color: Color(0xFF1B4332), size: 20),
             ],
           ],
         ),

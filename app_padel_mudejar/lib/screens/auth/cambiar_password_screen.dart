@@ -74,11 +74,7 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
         height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFF52B788),
-              Color(0xFF2D6A4F),
-              Color(0xFF0D2B1E),
-            ],
+            colors: [Color(0xFF52B788), Color(0xFF2D6A4F), Color(0xFF0D2B1E)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -87,7 +83,8 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
           child: SingleChildScrollView(
             child: ConstrainedBox(
               constraints: BoxConstraints(
-                minHeight: size.height -
+                minHeight:
+                    size.height -
                     MediaQuery.of(context).padding.top -
                     MediaQuery.of(context).padding.bottom,
               ),
@@ -107,119 +104,174 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
 
                         Text(
                           'Cambia tu contraseña',
-                          style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: Theme.of(context).textTheme.displayMedium
+                              ?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
                         ).animate().fadeIn(delay: 100.ms),
 
                         const SizedBox(height: 8),
 
                         Text(
                           'Por seguridad, establece una contraseña personal',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.white70,
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: Colors.white70),
                           textAlign: TextAlign.center,
                         ).animate().fadeIn(delay: 200.ms),
 
                         const SizedBox(height: 40),
 
                         TextFormField(
-                          controller: _nuevaCtrl,
-                          obscureText: !_verNueva,
-                          style: const TextStyle(color: Colors.white),
-                          decoration: InputDecoration(
-                            hintText: 'Nueva contraseña',
-                            hintStyle: const TextStyle(color: Colors.white54),
-                            prefixIcon: const Icon(Icons.lock_outline_rounded, color: Colors.white70),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _verNueva ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                                color: Colors.white54,
+                              controller: _nuevaCtrl,
+                              obscureText: !_verNueva,
+                              style: const TextStyle(color: Colors.white),
+                              decoration: InputDecoration(
+                                hintText: 'Nueva contraseña',
+                                hintStyle: const TextStyle(
+                                  color: Colors.white54,
+                                ),
+                                prefixIcon: const Icon(
+                                  Icons.lock_outline_rounded,
+                                  color: Colors.white70,
+                                ),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _verNueva
+                                        ? Icons.visibility_off_rounded
+                                        : Icons.visibility_rounded,
+                                    color: Colors.white54,
+                                  ),
+                                  onPressed: () =>
+                                      setState(() => _verNueva = !_verNueva),
+                                ),
+                                filled: true,
+                                fillColor: Colors.white.withValues(alpha: 0.12),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  borderSide: BorderSide(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  borderSide: BorderSide(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  borderSide: const BorderSide(
+                                    color: Colors.white,
+                                    width: 2,
+                                  ),
+                                ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  borderSide: const BorderSide(
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                focusedErrorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  borderSide: const BorderSide(
+                                    color: Colors.white,
+                                    width: 2,
+                                  ),
+                                ),
+                                errorStyle: const TextStyle(
+                                  color: Colors.white,
+                                ),
                               ),
-                              onPressed: () => setState(() => _verNueva = !_verNueva),
-                            ),
-                            filled: true,
-                            fillColor: Colors.white.withOpacity(0.12),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: const BorderSide(color: Colors.white, width: 2),
-                            ),
-                            errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: const BorderSide(color: Colors.white),
-                            ),
-                            focusedErrorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: const BorderSide(color: Colors.white, width: 2),
-                            ),
-                            errorStyle: const TextStyle(color: Colors.white),
-                          ),
-                          validator: (v) {
-                            if (v == null || v.isEmpty) return 'Introduce una contraseña';
-                            if (v.length < 6) return 'Mínimo 6 caracteres';
-                            final auth = context.read<AuthProvider>();
-                            if (v == auth.dni) return 'La contraseña no puede ser tu DNI';
-                            return null;
-                          },
-                        ).animate().fadeIn(delay: 300.ms).slideX(begin: -0.2, end: 0),
+                              validator: (v) {
+                                if (v == null || v.isEmpty)
+                                  return 'Introduce una contraseña';
+                                if (v.length < 6) return 'Mínimo 6 caracteres';
+                                final auth = context.read<AuthProvider>();
+                                if (v == auth.dni)
+                                  return 'La contraseña no puede ser tu DNI';
+                                return null;
+                              },
+                            )
+                            .animate()
+                            .fadeIn(delay: 300.ms)
+                            .slideX(begin: -0.2, end: 0),
 
                         const SizedBox(height: 12),
 
                         TextFormField(
-                          controller: _confirmarCtrl,
-                          obscureText: !_verConfirmar,
-                          style: const TextStyle(color: Colors.white),
-                          decoration: InputDecoration(
-                            hintText: 'Confirmar contraseña',
-                            hintStyle: const TextStyle(color: Colors.white54),
-                            prefixIcon: const Icon(Icons.lock_rounded, color: Colors.white70),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _verConfirmar ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                                color: Colors.white54,
+                              controller: _confirmarCtrl,
+                              obscureText: !_verConfirmar,
+                              style: const TextStyle(color: Colors.white),
+                              decoration: InputDecoration(
+                                hintText: 'Confirmar contraseña',
+                                hintStyle: const TextStyle(
+                                  color: Colors.white54,
+                                ),
+                                prefixIcon: const Icon(
+                                  Icons.lock_rounded,
+                                  color: Colors.white70,
+                                ),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _verConfirmar
+                                        ? Icons.visibility_off_rounded
+                                        : Icons.visibility_rounded,
+                                    color: Colors.white54,
+                                  ),
+                                  onPressed: () => setState(
+                                    () => _verConfirmar = !_verConfirmar,
+                                  ),
+                                ),
+                                filled: true,
+                                fillColor: Colors.white.withValues(alpha: 0.12),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  borderSide: BorderSide(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  borderSide: BorderSide(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  borderSide: const BorderSide(
+                                    color: Colors.white,
+                                    width: 2,
+                                  ),
+                                ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  borderSide: const BorderSide(
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                focusedErrorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  borderSide: const BorderSide(
+                                    color: Colors.white,
+                                    width: 2,
+                                  ),
+                                ),
+                                errorStyle: const TextStyle(
+                                  color: Colors.white,
+                                ),
                               ),
-                              onPressed: () => setState(() => _verConfirmar = !_verConfirmar),
-                            ),
-                            filled: true,
-                            fillColor: Colors.white.withOpacity(0.12),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: const BorderSide(color: Colors.white, width: 2),
-                            ),
-                            errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: const BorderSide(color: Colors.white),
-                            ),
-                            focusedErrorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: const BorderSide(color: Colors.white, width: 2),
-                            ),
-                            errorStyle: const TextStyle(color: Colors.white),
-                          ),
-                          validator: (v) {
-                            if (v == null || v.isEmpty) return 'Confirma tu contraseña';
-                            if (v != _nuevaCtrl.text) return 'Las contraseñas no coinciden';
-                            return null;
-                          },
-                        ).animate().fadeIn(delay: 350.ms).slideX(begin: -0.2, end: 0),
+                              validator: (v) {
+                                if (v == null || v.isEmpty)
+                                  return 'Confirma tu contraseña';
+                                if (v != _nuevaCtrl.text)
+                                  return 'Las contraseñas no coinciden';
+                                return null;
+                              },
+                            )
+                            .animate()
+                            .fadeIn(delay: 350.ms)
+                            .slideX(begin: -0.2, end: 0),
 
                         const SizedBox(height: 16),
 
@@ -227,18 +279,27 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Colors.redAccent.withOpacity(0.2),
+                              color: Colors.redAccent.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.redAccent.withOpacity(0.4)),
+                              border: Border.all(
+                                color: Colors.redAccent.withValues(alpha: 0.4),
+                              ),
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.error_outline, color: Colors.redAccent, size: 18),
+                                const Icon(
+                                  Icons.error_outline,
+                                  color: Colors.redAccent,
+                                  size: 18,
+                                ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
                                     _error!,
-                                    style: const TextStyle(color: Colors.redAccent, fontSize: 13),
+                                    style: const TextStyle(
+                                      color: Colors.redAccent,
+                                      fontSize: 13,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -269,7 +330,10 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
                                 )
                               : const Text(
                                   'Guardar contraseña',
-                                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 16,
+                                  ),
                                 ),
                         ).animate().fadeIn(delay: 400.ms),
 
@@ -283,7 +347,10 @@ class _CambiarPasswordScreenState extends State<CambiarPasswordScreen> {
                           },
                           child: const Text(
                             'Más tarde',
-                            style: TextStyle(color: Colors.white60, fontSize: 14),
+                            style: TextStyle(
+                              color: Colors.white60,
+                              fontSize: 14,
+                            ),
                           ),
                         ),
 
