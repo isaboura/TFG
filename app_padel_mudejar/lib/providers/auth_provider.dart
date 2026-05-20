@@ -71,7 +71,8 @@ class AuthProvider extends ChangeNotifier {
 
       if (result['success'] != true) {
         // La API usa 'message' en algunos casos y 'mensaje' en otros
-        _error = result['message']?.toString() ??
+        _error =
+            result['message']?.toString() ??
             result['mensaje']?.toString() ??
             'DNI o contraseña incorrectos.';
         _isLoading = false;
@@ -115,7 +116,6 @@ class AuthProvider extends ChangeNotifier {
   Future<Map<String, dynamic>> registrar(Map<String, dynamic> datos) async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
 
     try {
       final result = await ApiService.registrarSocio(datos);
@@ -140,7 +140,9 @@ class AuthProvider extends ChangeNotifier {
         }
       }
       _isLoading = false;
-      notifyListeners();
+      if (result['success'] == true) {
+        notifyListeners();
+      }
       return result;
     } catch (e) {
       _error = 'Error al registrarse. Comprueba tu conexión.';

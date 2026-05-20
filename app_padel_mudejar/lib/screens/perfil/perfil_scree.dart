@@ -42,6 +42,7 @@ class PerfilScreen extends StatelessWidget {
                 // --- Avatar con inicial del nombre y número de socio ---
                 Column(
                   children: [
+                    // Círculo con la inicial del nombre
                     CircleAvatar(
                       radius: 44,
                       backgroundColor: Colors.white.withValues(alpha: 0.2),
@@ -56,6 +57,7 @@ class PerfilScreen extends StatelessWidget {
                       ),
                     ).animate().scale(begin: const Offset(0.8, 0.8)).fadeIn(),
                     const SizedBox(height: 12),
+                    // Nombre completo del socio
                     Text(
                       auth.nombreCompleto,
                       style: const TextStyle(
@@ -64,7 +66,7 @@ class PerfilScreen extends StatelessWidget {
                           color: Colors.white),
                     ).animate().fadeIn(delay: 100.ms),
                     const SizedBox(height: 4),
-                    // Badge con el número de carnet
+                    // Badge con el número de carnet semitransparente
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 4),
@@ -85,7 +87,7 @@ class PerfilScreen extends StatelessWidget {
 
                 const SizedBox(height: 28),
 
-                // --- Tarjeta de datos personales ---
+                // --- Tarjeta de datos personales semitransparente ---
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -97,7 +99,7 @@ class PerfilScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Cabecera con título y botón editar
+                      // Cabecera con título y botón de editar
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -106,6 +108,7 @@ class PerfilScreen extends StatelessWidget {
                                   fontSize: 14,
                                   fontWeight: FontWeight.w700,
                                   color: Colors.white)),
+                          // Botón para abrir el bottom sheet de edición
                           GestureDetector(
                             onTap: () => _mostrarEditarPerfil(context, auth),
                             child: Container(
@@ -136,6 +139,7 @@ class PerfilScreen extends StatelessWidget {
                           color: Colors.white.withValues(alpha: 0.2),
                           height: 1),
                       const SizedBox(height: 8),
+                      // Filas con los datos del socio
                       _DataRow(
                           icon: Icons.badge_rounded,
                           label: 'DNI',
@@ -154,7 +158,7 @@ class PerfilScreen extends StatelessWidget {
 
                 const SizedBox(height: 16),
 
-                // --- Tarjeta de actividad ---
+                // --- Tarjeta de actividad semitransparente ---
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -172,7 +176,7 @@ class PerfilScreen extends StatelessWidget {
                               fontWeight: FontWeight.w700,
                               color: Colors.white)),
                       const SizedBox(height: 12),
-                      // Acceso a reservas próximas
+                      // Acceso a reservas próximas (pestaña 0)
                       _ActionRow(
                         icon: Icons.calendar_month_rounded,
                         label: 'Mis reservas',
@@ -190,7 +194,7 @@ class PerfilScreen extends StatelessWidget {
 
                 const SizedBox(height: 16),
 
-                // --- Tarjeta de soporte ---
+                // --- Tarjeta de soporte semitransparente ---
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -208,13 +212,13 @@ class PerfilScreen extends StatelessWidget {
                               fontWeight: FontWeight.w700,
                               color: Colors.white)),
                       const SizedBox(height: 12),
-                      // Guía de uso de la app
+                      // Opción para ver la guía de uso de la app
                       _ActionRow(
                         icon: Icons.help_outline_rounded,
                         label: 'Cómo usar la app',
                         onTap: () => _mostrarComoUsarApp(context),
                       ),
-                      // Contactar con el admin para problemas
+                      // Opción para contactar con el admin
                       _ActionRow(
                         icon: Icons.flag_outlined,
                         label: 'Reportar un problema',
@@ -226,9 +230,10 @@ class PerfilScreen extends StatelessWidget {
 
                 const SizedBox(height: 24),
 
-                // --- Botón de cerrar sesión ---
+                // --- Botón de cerrar sesión en blanco ---
                 ElevatedButton.icon(
                   onPressed: () async {
+                    // Diálogo de confirmación antes de cerrar sesión
                     final shouldLogout = await showDialog<bool>(
                       context: context,
                       barrierDismissible: false,
@@ -252,6 +257,7 @@ class PerfilScreen extends StatelessWidget {
                         ],
                       ),
                     );
+                    // Si confirma, hacemos logout y redirigimos al login
                     if (shouldLogout == true) {
                       await context.read<AuthProvider>().logout();
                       if (context.mounted) context.go('/login');
@@ -301,7 +307,7 @@ class PerfilScreen extends StatelessWidget {
     );
   }
 
-  /// Abre la pantalla de guía de uso de la app.
+  /// Abre la pantalla de guía de uso de la app como modal a pantalla completa.
   void _mostrarComoUsarApp(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -333,6 +339,7 @@ class _ComoUsarAppScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFF0D2B1E),
       body: Container(
+        // Fondo con degradado verde igual que el resto de la app
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [Color(0xFF52B788), Color(0xFF2D6A4F), Color(0xFF0D2B1E)],
@@ -348,6 +355,7 @@ class _ComoUsarAppScreen extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                 child: Row(
                   children: [
+                    // Botón de cerrar la pantalla
                     GestureDetector(
                       onTap: () => Navigator.of(context).pop(),
                       child: Container(
@@ -426,7 +434,7 @@ class _ComoUsarAppScreen extends StatelessWidget {
                             'En la pestaña Torneos verás todos los torneos del club con su bracket completo. Si perteneces a un equipo, tus próximos partidos aparecerán en la sección "Mis próximos partidos".',
                         icono: Icons.emoji_events_rounded,
                       ),
-                      // Paso 7: Fútbol Sala
+                      // Paso 7: Reservar Fútbol
                       _PasoGuia(
                         numero: '7',
                         titulo: 'Reservar Fútbol',
@@ -456,11 +464,12 @@ class _ComoUsarAppScreen extends StatelessWidget {
 }
 
 /// Widget de paso de guía con número, icono, título y descripción.
+/// Se usa en la pantalla de cómo usar la app.
 class _PasoGuia extends StatelessWidget {
-  final String numero;
-  final String titulo;
-  final String descripcion;
-  final IconData icono;
+  final String numero;      // Número del paso (1, 2, 3...)
+  final String titulo;      // Título corto del paso
+  final String descripcion; // Explicación detallada del paso
+  final IconData icono;     // Icono representativo del paso
 
   const _PasoGuia({
     required this.numero,
@@ -475,6 +484,7 @@ class _PasoGuia extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
+        // Fondo semitransparente para integrarse con el degradado
         color: Colors.white.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
@@ -503,7 +513,7 @@ class _PasoGuia extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Icono y título del paso
+                // Fila con icono y título del paso
                 Row(
                   children: [
                     Icon(icono, color: Colors.white70, size: 18),
@@ -568,7 +578,6 @@ class _ReportarProblemaBottomSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-
           // Icono y título
           Row(
             children: [
@@ -592,22 +601,19 @@ class _ReportarProblemaBottomSheet extends StatelessWidget {
                           color: Colors.white)),
                   SizedBox(height: 2),
                   Text('Contacta con el gerente del club',
-                      style:
-                          TextStyle(color: Colors.white70, fontSize: 13)),
+                      style: TextStyle(color: Colors.white70, fontSize: 13)),
                 ],
               ),
             ],
           ),
           const SizedBox(height: 24),
-
-          // Descripción
+          // Descripción del problema
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(14),
-              border:
-                  Border.all(color: Colors.white.withValues(alpha: 0.2)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
             ),
             child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -622,17 +628,16 @@ class _ReportarProblemaBottomSheet extends StatelessWidget {
                 SizedBox(height: 8),
                 Text(
                   'Escríbenos directamente al email del administrador del club y lo resolveremos lo antes posible.',
-                  style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+                  style: TextStyle(
+                      color: Colors.white70, fontSize: 13, height: 1.4),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 16),
-
-          // Email del admin — pulsar para copiar
+          // Email del admin — pulsar para copiar al portapapeles
           GestureDetector(
             onTap: () {
-              // Copiamos el email al portapapeles
               Clipboard.setData(const ClipboardData(text: emailAdmin));
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -648,8 +653,8 @@ class _ReportarProblemaBottomSheet extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.3)),
+                border:
+                    Border.all(color: Colors.white.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
@@ -689,8 +694,7 @@ class _ReportarProblemaBottomSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-
-          // Botón de cerrar
+          // Botón de cerrar en blanco con texto verde
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(),
             style: ElevatedButton.styleFrom(
@@ -702,8 +706,7 @@ class _ReportarProblemaBottomSheet extends StatelessWidget {
               elevation: 0,
             ),
             child: const Text('Entendido',
-                style:
-                    TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
           ),
         ],
       ),
@@ -713,9 +716,10 @@ class _ReportarProblemaBottomSheet extends StatelessWidget {
 
 /// Bottom sheet para editar los datos personales del socio.
 /// Tiene el mismo degradado verde que el resto de la app.
+/// Valida que ningún campo quede vacío antes de guardar.
 class _EditarPerfilBottomSheet extends StatefulWidget {
-  final AuthProvider auth;
-  final VoidCallback onActualizado;
+  final AuthProvider auth;           // Datos actuales del socio
+  final VoidCallback onActualizado;  // Callback al guardar con éxito
 
   const _EditarPerfilBottomSheet(
       {required this.auth, required this.onActualizado});
@@ -733,11 +737,12 @@ class _EditarPerfilBottomSheetState extends State<_EditarPerfilBottomSheet> {
   late TextEditingController _emailCtrl;
 
   bool _guardando = false;
-  String? _error;
+  String? _error; // Mensaje de error de validación o de la API
 
   @override
   void initState() {
     super.initState();
+    // Precargamos los campos con los datos actuales del socio
     _nombreCtrl = TextEditingController(text: widget.auth.nombre);
     _apellidosCtrl = TextEditingController(text: widget.auth.apellidos);
     _telefonoCtrl = TextEditingController(text: widget.auth.telefono);
@@ -746,6 +751,7 @@ class _EditarPerfilBottomSheetState extends State<_EditarPerfilBottomSheet> {
 
   @override
   void dispose() {
+    // Liberamos todos los controladores de texto
     _nombreCtrl.dispose();
     _apellidosCtrl.dispose();
     _telefonoCtrl.dispose();
@@ -753,8 +759,28 @@ class _EditarPerfilBottomSheetState extends State<_EditarPerfilBottomSheet> {
     super.dispose();
   }
 
-  /// Envía los datos actualizados a la API y recarga el perfil si tiene éxito.
+  /// Valida los campos del formulario antes de enviar a la API.
+  /// Devuelve un mensaje de error si hay algún campo inválido, o null si todo está bien.
+  String? _validar() {
+    if (_nombreCtrl.text.trim().isEmpty) return 'El nombre no puede estar vacío';
+    if (_apellidosCtrl.text.trim().isEmpty) return 'Los apellidos no pueden estar vacíos';
+    if (_telefonoCtrl.text.trim().isEmpty) return 'El teléfono no puede estar vacío';
+    if (_telefonoCtrl.text.trim().length != 9) return 'El teléfono debe tener 9 dígitos';
+    if (_emailCtrl.text.trim().isEmpty) return 'El email no puede estar vacío';
+    if (!_emailCtrl.text.trim().contains('@')) return 'El email no es válido';
+    return null;
+  }
+
+  /// Valida los campos y envía los datos actualizados a la API.
+  /// Recarga el perfil si la actualización tiene éxito.
   Future<void> _guardar() async {
+    // Validamos antes de llamar a la API
+    final errorValidacion = _validar();
+    if (errorValidacion != null) {
+      setState(() => _error = errorValidacion);
+      return;
+    }
+
     setState(() {
       _guardando = true;
       _error = null;
@@ -768,7 +794,10 @@ class _EditarPerfilBottomSheetState extends State<_EditarPerfilBottomSheet> {
       });
       if (mounted) {
         if (result['success'] == true) {
+          // Recargamos el perfil para reflejar los cambios en la UI
           await widget.auth.recargarPerfil();
+          // Comprobamos mounted de nuevo después del await
+          if (!mounted) return;
           Navigator.pop(context);
           widget.onActualizado();
         } else {
@@ -780,7 +809,7 @@ class _EditarPerfilBottomSheetState extends State<_EditarPerfilBottomSheet> {
       }
     } catch (e) {
       setState(() {
-        _error = e.toString();
+        _error = 'Error de conexión';
         _guardando = false;
       });
     }
@@ -790,6 +819,7 @@ class _EditarPerfilBottomSheetState extends State<_EditarPerfilBottomSheet> {
   Widget build(BuildContext context) {
     return Container(
       height: MediaQuery.of(context).size.height * 0.80,
+      // Degradado verde igual que el resto de la app
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFF2D6A4F), Color(0xFF1B4332), Color(0xFF0D2B1E)],
@@ -798,6 +828,7 @@ class _EditarPerfilBottomSheetState extends State<_EditarPerfilBottomSheet> {
         ),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
+      // Padding extra para que el teclado no tape el formulario
       padding: EdgeInsets.only(
         left: 24,
         right: 24,
@@ -824,10 +855,12 @@ class _EditarPerfilBottomSheetState extends State<_EditarPerfilBottomSheet> {
                   fontWeight: FontWeight.w700,
                   color: Colors.white)),
           const SizedBox(height: 20),
+          // Formulario con scroll para cuando el teclado esté visible
           Expanded(
             child: SingleChildScrollView(
               child: Column(
                 children: [
+                  // Campos editables del perfil
                   _campo('Nombre', _nombreCtrl, Icons.person_outline_rounded),
                   const SizedBox(height: 12),
                   _campo('Apellidos', _apellidosCtrl,
@@ -838,7 +871,7 @@ class _EditarPerfilBottomSheetState extends State<_EditarPerfilBottomSheet> {
                   const SizedBox(height: 12),
                   _campo('Email', _emailCtrl, Icons.email_outlined,
                       keyboardType: TextInputType.emailAddress),
-                  // Mensaje de error si la API falla
+                  // Mensaje de error de validación o de la API
                   if (_error != null) ...[
                     const SizedBox(height: 12),
                     Container(
@@ -857,7 +890,8 @@ class _EditarPerfilBottomSheetState extends State<_EditarPerfilBottomSheet> {
                           Expanded(
                               child: Text(_error!,
                                   style: const TextStyle(
-                                      color: Colors.redAccent, fontSize: 13))),
+                                      color: Colors.redAccent,
+                                      fontSize: 13))),
                         ],
                       ),
                     ),
@@ -894,11 +928,13 @@ class _EditarPerfilBottomSheetState extends State<_EditarPerfilBottomSheet> {
   }
 
   /// Campo de texto con estilo adaptado al fondo verde.
+  /// Texto en blanco, borde semitransparente y fondo semitransparente.
   Widget _campo(String label, TextEditingController ctrl, IconData icon,
       {TextInputType? keyboardType}) {
     return TextField(
       controller: ctrl,
       keyboardType: keyboardType,
+      // Texto en blanco para que se vea sobre el fondo verde
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         labelText: label,
@@ -914,6 +950,7 @@ class _EditarPerfilBottomSheetState extends State<_EditarPerfilBottomSheet> {
             borderRadius: BorderRadius.circular(12),
             borderSide:
                 BorderSide(color: Colors.white.withValues(alpha: 0.2))),
+        // Borde blanco sólido cuando el campo está enfocado
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: Colors.white, width: 2)),
@@ -923,10 +960,11 @@ class _EditarPerfilBottomSheetState extends State<_EditarPerfilBottomSheet> {
 }
 
 /// Fila de dato personal con icono, etiqueta y valor.
+/// Adaptada para mostrarse sobre fondo verde (texto en blanco).
 class _DataRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
+  final IconData icon;  // Icono descriptivo del dato
+  final String label;  // Etiqueta (ej: "DNI", "Email")
+  final String value;  // Valor del dato del socio
 
   const _DataRow(
       {required this.icon, required this.label, required this.value});
@@ -937,11 +975,14 @@ class _DataRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
+          // Icono en blanco semitransparente
           Icon(icon, color: Colors.white70, size: 18),
           const SizedBox(width: 12),
+          // Etiqueta en blanco semitransparente
           Text(label,
               style: const TextStyle(color: Colors.white70, fontSize: 13)),
           const Spacer(),
+          // Valor en blanco sólido
           Text(value,
               style: const TextStyle(
                   color: Colors.white,
@@ -954,10 +995,11 @@ class _DataRow extends StatelessWidget {
 }
 
 /// Fila de acción con icono, texto y flecha de navegación.
+/// Adaptada para mostrarse sobre fondo verde (texto en blanco).
 class _ActionRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
+  final IconData icon;       // Icono de la acción
+  final String label;        // Texto descriptivo de la acción
+  final VoidCallback onTap;  // Callback al pulsar la fila
 
   const _ActionRow(
       {required this.icon, required this.label, required this.onTap});
@@ -971,11 +1013,14 @@ class _ActionRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Row(
           children: [
+            // Icono en blanco semitransparente
             Icon(icon, color: Colors.white70, size: 18),
             const SizedBox(width: 12),
+            // Texto de la acción en blanco
             Text(label,
                 style: const TextStyle(color: Colors.white, fontSize: 14)),
             const Spacer(),
+            // Flecha indicando que es navegable
             const Icon(Icons.chevron_right_rounded, color: Colors.white54),
           ],
         ),

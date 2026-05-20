@@ -63,7 +63,7 @@ class _MisReservasScreenState extends State<MisReservasScreen>
   Future<void> _cancelar(int idReserva) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Cancelar reserva'),
         content: const Text(
@@ -71,11 +71,11 @@ class _MisReservasScreenState extends State<MisReservasScreen>
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.pop(dialogContext, false),
             child: const Text('No'),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(dialogContext, true),
             child: const Text(
               'Sí, cancelar',
               style: TextStyle(color: AppTheme.danger),
