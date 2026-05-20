@@ -87,7 +87,8 @@ class _MisReservasScreenState extends State<MisReservasScreen>
     if (confirm != true) return;
 
     // Llamada a la API para cancelar la reserva
-    final result = await ApiService.cancelarReserva(idReserva);
+    final auth = context.read<AuthProvider>();
+    final result = await ApiService.cancelarReserva(idReserva, auth.dni);
     if (mounted) {
       if (result['success'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -14,8 +14,9 @@ class ApiService {
   /// Devuelve la lista de instalaciones.
   /// [estado] opcional: 'ACTIVA' o 'MANTENIMIENTO'
   static Future<List<dynamic>> getInstalaciones({String? estado}) async {
-    final uri = Uri.parse('$baseUrl/instalaciones').replace(
-        queryParameters: estado != null ? {'estado': estado} : null);
+    final uri = Uri.parse(
+      '$baseUrl/instalaciones',
+    ).replace(queryParameters: estado != null ? {'estado': estado} : null);
     final res = await http.get(uri);
     final body = jsonDecode(res.body);
     if (body['success'] == true) return body['data'] as List<dynamic>;
@@ -91,13 +92,19 @@ class ApiService {
   }
 
   /// Cancela una reserva por su ID.
-  static Future<Map<String, dynamic>> cancelarReserva(int idReserva) async {
+  /// Cancela una reserva por su ID.
+  /// Requiere el DNI del socio para verificar que es el propietario.
+  static Future<Map<String, dynamic>> cancelarReserva(
+    int idReserva,
+    String dniSocio,
+  ) async {
     final res = await http.patch(
       Uri.parse('$baseUrl/reservas/$idReserva/cancelar'),
       headers: {
         'Content-Type': 'application/json',
         'X-Requested-With': 'XMLHttpRequest',
       },
+      body: jsonEncode({'dniSocio': dniSocio}),
     );
     return jsonDecode(res.body);
   }
@@ -231,8 +238,9 @@ class ApiService {
   /// Devuelve la lista de tarifas disponibles.
   /// [soloActivas] filtra solo las tarifas activas.
   static Future<List<dynamic>> getTarifas({bool soloActivas = true}) async {
-    final uri = Uri.parse('$baseUrl/tarifas').replace(
-        queryParameters: soloActivas ? {'activa': 'true'} : null);
+    final uri = Uri.parse(
+      '$baseUrl/tarifas',
+    ).replace(queryParameters: soloActivas ? {'activa': 'true'} : null);
     final res = await http.get(uri);
     final body = jsonDecode(res.body);
     if (body['success'] == true) return body['data'] as List<dynamic>;
@@ -316,8 +324,9 @@ class ApiService {
     final params = <String, String>{};
     if (estado != null) params['estado'] = estado;
     if (deporte != null) params['deporte'] = deporte;
-    final uri = Uri.parse('$baseUrl/torneos')
-        .replace(queryParameters: params.isNotEmpty ? params : null);
+    final uri = Uri.parse(
+      '$baseUrl/torneos',
+    ).replace(queryParameters: params.isNotEmpty ? params : null);
     final res = await http.get(uri);
     final body = jsonDecode(res.body);
     if (body['success'] == true) return body['data'] as List<dynamic>;
