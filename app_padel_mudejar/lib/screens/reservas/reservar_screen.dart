@@ -64,8 +64,10 @@ class _ReservarScreenState extends State<ReservarScreen> {
       final tipoPistaApi = (t['tipo_pista'] as String? ?? '').toLowerCase();
 
       if (tipoPista.contains('pádel') || tipoPista.contains('padel')) {
-        // Pádel: solo generales (null), excluimos tenis y fútbol
-        return tipoPistaApi.isEmpty;
+        // Pádel: las propias de pádel + las generales
+        return tipoPistaApi.isEmpty ||
+            tipoPistaApi.contains('pádel') ||
+            tipoPistaApi.contains('padel');
       }
       if (tipoPista.contains('tenis')) {
         // Tenis: las propias de tenis + las generales
